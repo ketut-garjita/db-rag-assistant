@@ -1,0 +1,55 @@
+id: db_catalog_ingestion
+namespace: de_ai.rag
+labels:
+  name: DB & Query Assistant RAG
+
+description: |
+  Incremental, hash-based ingestion for the DB Schema & Query Assistant's
+  knowledge base (see ingestion/ingest.py — unchanged chunks are skipped,
+  changed/new chunks are upserted, removed chunks are deleted).
+
+  Reuses the already-built "db-rag-assistant-app" image (same one used by
+  the `app` service in docker-compose.yml) instead of reinstalling
+  dependencies from scratch on every run — code and dependencies are
+  already baked in via the Dockerfile. The task attaches to the same
+  "zoomcamp_net" docker network so it can reach `db` (Postgres/pgvector)
+  and `ai_ollama` by their container/service names, exactly like the
+  `app` service does.
+
+  Two source types are supported (see SOURCE_LOADERS in ingestion/ingest.py):
+    - local_file: re-index the markdown/DDL files under data/ (baked into
+      the image at build time — rebuild the image after editing them)
+    - db_catalog: introspect a live PostgreSQL schema directly via
+      information_schema; `source` must then be a full libpq DSN, e.g.
+      "host=db port=5432 dbname=postgres user=postgres password=postgres"
+
+tasks:
+  - id: db_catalog_ingestion
+    type: io.kestra.plugin.scripts.python.Commands
+
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+      networkMode: zoomcamp_net
+      pullPolicy: IF_NOT_PRESENT
+
+    containerImage: db-rag-assistant-app
+    pythonVersion: "3.12"
+
+    env:
+      PG_HOST: db
+      PG_PORT: "5432"
+      PG_DB: postgres
+      PG_USER: postgres
+      PG_PASSWORD: postgres
+   
+    commands:
+      - python /app/rag/ingestion/ingest.py --source "host=db port=5432 dbname=postgres user=postgres password=postgres" --source-type db_catalog
+      
+errors:
+  # Simplest option: just log the failure (visible in the Kestra UI's
+  # execution list). Swap for io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+  # (see this repo's git history) if you want a Slack ping instead.
+  - id: log_failure
+    type: io.kestra.plugin.core.log.Log
+    message: "db_rag_ingestion failed on execution {{ execution.id }}"
+

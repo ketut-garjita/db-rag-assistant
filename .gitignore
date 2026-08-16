@@ -1,0 +1,26 @@
+# Secrets
+terraform.tfvars
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+anaconda_projects/
+.jupyter/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Runtime artifacts
+*.log
+*.db
+
+# Terraform
+terraform/

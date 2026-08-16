@@ -1,0 +1,148 @@
+erDiagram
+    DEPARTMENTS ||--o{ PROVIDERS : "staffs"
+    PROVIDERS ||--o| DEPARTMENTS : "heads (head_provider_id)"
+
+    PATIENTS ||--o{ APPOINTMENTS : schedules
+    PROVIDERS ||--o{ APPOINTMENTS : attends
+
+    PATIENTS ||--o{ ENCOUNTERS : has
+    PROVIDERS ||--o{ ENCOUNTERS : treats
+    DEPARTMENTS ||--o{ ENCOUNTERS : hosts
+    APPOINTMENTS ||--o| ENCOUNTERS : "results in (optional)"
+
+    ENCOUNTERS ||--o{ DIAGNOSES : records
+    ENCOUNTERS ||--o{ PROCEDURES : records
+    PROVIDERS ||--o{ PROCEDURES : performs
+
+    ENCOUNTERS ||--o{ PRESCRIPTIONS : generates
+    MEDICATIONS ||--o{ PRESCRIPTIONS : "is prescribed as"
+    PROVIDERS ||--o{ PRESCRIPTIONS : prescribes
+
+    ENCOUNTERS ||--o{ LAB_ORDERS : requests
+    PROVIDERS ||--o{ LAB_ORDERS : orders
+    LAB_ORDERS ||--o{ LAB_RESULTS : yields
+
+    ENCOUNTERS ||--o{ VITALS : records
+    PROVIDERS ||--o{ VITALS : records
+
+    PATIENTS ||--o{ ALLERGIES : has
+    PATIENTS ||--o{ IMMUNIZATIONS : receives
+    PROVIDERS ||--o{ IMMUNIZATIONS : administers
+
+    PATIENTS ||--o{ INSURANCE_POLICIES : holds
+    ENCOUNTERS ||--o{ CLAIMS : generates
+    INSURANCE_POLICIES ||--o{ CLAIMS : covers
+
+    ENCOUNTERS ||--o{ BILLING_TRANSACTIONS : "is billed as"
+    CLAIMS ||--o| BILLING_TRANSACTIONS : funds
+
+    PATIENTS {
+        bigint patient_id PK
+        varchar mrn UK
+        varchar full_name
+        date date_of_birth
+        varchar gender
+    }
+    DEPARTMENTS {
+        bigint department_id PK
+        varchar name UK
+        bigint head_provider_id FK
+    }
+    PROVIDERS {
+        bigint provider_id PK
+        varchar full_name
+        varchar specialty
+        varchar license_number UK
+        bigint department_id FK
+        boolean is_active
+    }
+    APPOINTMENTS {
+        bigint appointment_id PK
+        bigint patient_id FK
+        bigint provider_id FK
+        timestamptz scheduled_at
+        varchar status
+    }
+    ENCOUNTERS {
+        bigint encounter_id PK
+        bigint patient_id FK
+        bigint provider_id FK
+        bigint department_id FK
+        bigint appointment_id FK
+        varchar encounter_type
+        timestamptz admitted_at
+        timestamptz discharged_at
+    }
+    DIAGNOSES {
+        bigint diagnosis_id PK
+        bigint encounter_id FK
+        varchar icd10_code
+        boolean is_primary
+    }
+    PROCEDURES {
+        bigint procedure_id PK
+        bigint encounter_id FK
+        varchar cpt_code
+        bigint performed_by FK
+    }
+    MEDICATIONS {
+        bigint medication_id PK
+        varchar name
+        varchar generic_name
+        boolean is_controlled_substance
+    }
+    PRESCRIPTIONS {
+        bigint prescription_id PK
+        bigint encounter_id FK
+        bigint medication_id FK
+        bigint prescribed_by FK
+    }
+    LAB_ORDERS {
+        bigint lab_order_id PK
+        bigint encounter_id FK
+        varchar test_type
+        bigint ordered_by FK
+        varchar status
+    }
+    LAB_RESULTS {
+        bigint lab_result_id PK
+        bigint lab_order_id FK
+        varchar result_value
+        boolean is_abnormal
+    }
+    VITALS {
+        bigint vital_id PK
+        bigint encounter_id FK
+        bigint recorded_by FK
+        smallint heart_rate
+    }
+    ALLERGIES {
+        bigint allergy_id PK
+        bigint patient_id FK
+        varchar allergen
+        varchar severity
+    }
+    IMMUNIZATIONS {
+        bigint immunization_id PK
+        bigint patient_id FK
+        bigint administered_by FK
+        varchar vaccine_name
+    }
+    INSURANCE_POLICIES {
+        bigint policy_id PK
+        bigint patient_id FK
+        varchar payer_name
+        varchar policy_number
+    }
+    CLAIMS {
+        bigint claim_id PK
+        bigint encounter_id FK
+        bigint policy_id FK
+        varchar status
+    }
+    BILLING_TRANSACTIONS {
+        bigint transaction_id PK
+        bigint encounter_id FK
+        bigint claim_id FK
+        varchar payment_method
+    }

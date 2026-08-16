@@ -1,0 +1,15 @@
+# Copy to terraform.tfvars and fill in real values. terraform.tfvars is
+# gitignored (see .gitignore) since it holds secrets -- never commit it.
+
+project_id     = "your-gcp-project-id"
+region         = "us-central1"
+db_password    = "choose-a-strong-password"
+openai_api_key = "sk-..."
+llm_model      = "gpt-4o-mini"
+
+# Build and push the image first (see README "Cloud deployment"), then
+# paste the resulting URI here:
+app_image_tag = "us-central1-docker.pkg.dev/your-gcp-project-id/db-rag-assistant/app:latest"
+
+allow_public_access = true
+cloud_sql_tier       = "db-f1-micro"
