@@ -1,0 +1,10 @@
+# Never send secrets or local runtime state into Docker build context
+.env
+.env.*
+!.env.example
+.git
+.git/**
+.ipynb_checkpoints
+__pycache__
+*.pyc
+*.log
