@@ -646,13 +646,16 @@ See [Cloud Design Decision](infra/gcp/doc/cloud-design-decisions.md)
 #### Troubleshooting log
 Real issues hit (and fixed) getting this deployment working, in case you hit the same ones see [gcp-deployment-troubleshooting](infra/gcp/doc/gcp-deployment-troubleshooting.md).
 
-#### Screenshoot
+#### Screenshoots
 
 ![DB Schema & Query Assistant](assets/Screenshot-GCP-1.png)
 
-![<Monitoring Dashborad](assets/Screenshot-GCP-2.png)
+![Monitoring Dashborad](assets/Screenshot-GCP-2.png)
 
-See other screenshoots: [GCP Screenshoots](infra/gcp/doc/gcp-screenshoots.md)
+![Resources](assets/Screenshot-GCP-3.png)
+
+![Database](assets/Screenshot-GCP-4.png)
+
 
 ## 13. Improvements
 
