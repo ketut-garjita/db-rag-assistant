@@ -309,7 +309,7 @@ Pre-requites:
 3. Goto the repository home directory
 
    ```
-   cd db-rag-assistant.git
+   cd db-rag-assistant
    ```
 4. Execute docker compose
 
@@ -468,8 +468,10 @@ Pre-requites:
     
     - **Execute**
       ```
-      Flows --> rag_ingestion --> Execute
+      Flows --> rag_ingestion --> Execute --> Execute
       ```
+      *Notes: Refresh the page if getting the Connection interrupted message on the right bottom screen.*   
+      
       ![rag-ingestion](assets/rag-ingestion.png)
     
     - **Review Gantt (result)**
@@ -494,21 +496,37 @@ Pre-requites:
     
 
 ### Running on Virtual Machine (VM)
+
+**Use only Cloud Model (not Ollama)** 
+
 If you wish to use a Virtual Machine (VM) as the host, follow the same steps outlined above, ensuring that:
 - Python, Git, Docker and Docker Compose have been installed.
-- Execute the following script (bash command) to copy the flow files from the host to Kestra:
+- Clone repository
   ```
-  bash curl-kestra-flows.sh
+  cd
+  git clone https://github.com/ketut-garjita/db-rag-assistant.git
+  ```
+- Goto the repository home directory
+  ```
+  cd db-rag-assistant
   ```
 - No need to install Ollama
-- Rename file of docker-compose-without-ollama.yml to docker-compose.yml
+  
+  Rename docker-compose-without-ollama.yml to docker-compose.yml
+  
   ```
   mv docker-compose-without-ollama.yml docker-compose.yml
-
-- **Use only Cloud Model**
-
-- Follow steps 2 - 17 
+  ```
   
+- Follow [9. How to Run](#9-how-to-run) steps: 4, 5, 7, 8, 10, 11, 12. 13, 14, 15, 16, 17
+  
+- Note: use cp instead od copy, 
+- Type command below (step 16): Copy flow files from host to kestra using bash command
+  ```
+  chmod +x curl-kestra-flows.sh
+  ./curl-kestra-flows.sh
+  ```
+
     
 ## 10. Evaluation Targets (optional)
 
