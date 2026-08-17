@@ -1,6 +1,6 @@
 ### Screenshoot
 
-![GCP Screenshoots](assets/assets/Recording-GCP-3)
-![GCP Screenshoots](assets/Recording-GCP-4)
-![GCP Screenshoots](assets/Recording-GCP-5)
+![GCP Screenshoots](../../../assets/Screenshot-GCP-3.png)
+![GCP Screenshoots](../../../assets/Screenshot-GCP-4.png)
+![GCP Screenshoots](../../../assets/Screenshot-GCP-5.png)
 
