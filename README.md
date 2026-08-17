@@ -520,7 +520,7 @@ If you wish to use a Virtual Machine (VM) as the host, follow the same steps out
   
 - Follow [9. How to Run](#9-how-to-run) steps: 4, 5, 7, 8, 10, 11, 12. 13, 14, 15, 16, 17
   
-- Note: use cp instead od copy, 
+- Note: Use cp instead of copy command
 - Type command below (step 16): Copy flow files from host to kestra using bash command
   ```
   chmod +x curl-kestra-flows.sh
