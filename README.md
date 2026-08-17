@@ -171,7 +171,7 @@ db-rag-assistant
 | **[Kestra](https://kestra.io)** | Orchestrates incremental ingestion on a schedule or via webhook (see `kestra/flows/`) |
 | **pandas** | Data wrangling for the monitoring dashboard and evaluation scripts |
 | **psycopg2** | Direct PostgreSQL access for ingestion, retrieval, logging, and NL2SQL query execution |
-| **Terraform** | Infrastructure-as-code for cloud deployment (GCP) - see [Ch 12. Cloud Deployment (GCP — live)](#12-Cloud-Deployment-(GCP-—-live))|
+| **Terraform** | Infrastructure-as-code for cloud deployment (GCP) - see [Ch 12. Cloud Deployment](#12-cloud-deployment-gcp--live)
 
 ## 6. Flowing Ingestion 
 Flowing ingestion are incremental, not one-shot.
