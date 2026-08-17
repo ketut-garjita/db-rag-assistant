@@ -644,7 +644,7 @@ See [Cloud Design Decision](infra/gcp/doc/cloud-design-decisions.md)
 
 
 #### Troubleshooting log
-Real issues hit (and fixed) getting this deployment working, in case you hit the same ones see [gcp-deployment-troubleshooting.md](gcp-deployment-troubleshooting.md).
+Real issues hit (and fixed) getting this deployment working, in case you hit the same ones see [gcp-deployment-troubleshooting](infra/gcp/doc/gcp-deployment-troubleshooting.md).
 
 #### Screenshoot
 
