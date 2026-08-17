@@ -1,4 +1,8 @@
 # Secrets
+# NOTE: .env / .env.local / .env.cloud are intentionally NOT ignored --
+# API keys have been stripped from them; only local-setup passwords
+# remain, so course reviewers can reproduce and grade this repository
+# without extra setup.
 terraform.tfvars
 
 # Python
@@ -24,3 +28,6 @@ anaconda_projects/
 
 # Terraform
 terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.backup
