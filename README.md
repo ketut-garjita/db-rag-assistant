@@ -210,7 +210,7 @@ python /app/rag/ingestion/ingest.py --source "host=db port=5432 dbname=postgres 
 ```
 
 The `--source` value is a standard libpq connection string pointing at the database you want documented (it can be a different database/schema
-than the one storing `doc_chunks`). Running this against the Healthcare Data Platform example (after loading `db/healthcare_ddl.sql`) would index all 17 tables automatically, keeping documentation in sync with the actual schema — no drift between docs and reality. Like `local_file`,
+than the one storing `doc_chunks`). Running this against the Healthcare Data Platform example (after loading `db/schema.sql`) would index all 17 tables automatically, keeping documentation in sync with the actual schema — no drift between docs and reality. Like `local_file`,
 it's incremental: only tables whose structure changed get re-embedded.
 
 ### Ingesting with Kestra Orchestrator
