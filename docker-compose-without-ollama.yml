@@ -1,0 +1,276 @@
+services:
+
+  # ============================================================
+  # Application PostgreSQL + pgvector
+  # ============================================================
+  db:
+    image: ankane/pgvector
+    container_name: db-rag-postgres
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      POSTGRES_DB: ${PG_DB}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+
+    ports:
+      - "5432:5432"
+
+    networks:
+      - zoomcamp_net
+
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # schema.sql is auto-run only when the volume is empty
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  # ============================================================
+  # Main Streamlit application
+  # ============================================================
+  app:
+    build:
+      context: .
+      args:
+        EMBEDDING_MODEL: ${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
+        RERANKER_MODEL: ${RERANKER_MODEL:-cross-encoder/ms-marco-MiniLM-L-6-v2}
+
+    image: db-rag-assistant-app:latest
+
+    container_name: db-rag-app
+    restart: unless-stopped
+
+    depends_on:
+      db:
+        condition: service_healthy
+ 
+    env_file:
+      - .env
+
+    environment:
+      # Inside Docker network, PostgreSQL is reached using service name.
+      PG_HOST: db
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    networks:
+      - zoomcamp_net
+
+    ports:
+      - "8501:8501"
+
+    # IMPORTANT:
+    # No ./data:/app/data
+    # No .:/app
+    #
+    # The application now uses the files baked into the image.
+
+
+  # ============================================================
+  # Monitoring dashboard
+  # ============================================================
+  monitoring:
+    build:
+      context: .
+      args:
+        EMBEDDING_MODEL: ${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
+        RERANKER_MODEL: ${RERANKER_MODEL:-cross-encoder/ms-marco-MiniLM-L-6-v2}
+
+    image: db-rag-assistant-monitoring:latest
+
+    container_name: db-rag-monitoring
+    restart: unless-stopped
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    env_file:
+      - .env
+
+    environment:
+      PG_HOST: db
+
+    ports:
+      - "8502:8502"
+
+    networks:
+      - zoomcamp_net
+
+    command:
+      [
+        "streamlit",
+        "run",
+        "rag/monitoring/monitoring_dashboard.py",
+        "--server.address=0.0.0.0",
+        "--server.port=8502"
+      ]
+
+
+  # ============================================================
+  # pgAdmin
+  # ============================================================
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: llm-pgadmin
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: password
+
+    ports:
+      - "8085:80"
+
+    networks:
+      - zoomcamp_net
+
+
+  # ============================================================
+  # PostgreSQL for Kestra
+  # ============================================================
+  kestra-postgres:
+    image: postgres:18
+    container_name: kestra-postgres
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - kestra_pgdata:/var/lib/postgresql
+
+    environment:
+      POSTGRES_DB: ${PGK_DB}
+      POSTGRES_USER: ${PGK_USER}
+      POSTGRES_PASSWORD: ${PGK_PASSWORD}
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+    networks:
+      - zoomcamp_net
+
+
+  # ============================================================
+  # Kestra
+  # ============================================================
+  kestra:
+    # image: kestra/kestra:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.kestra
+    container_name: kestra
+    pull_policy: always
+
+    user: "root"
+    command: server standalone
+
+    stop_grace_period: 6m
+
+    volumes:
+      - kestra_data:/app/storage
+      - ./data:/rag-data:ro
+
+      # Docker socket allows Kestra Docker Task Runner
+      # to create containers on the host Docker engine.
+      - /var/run/docker.sock:/var/run/docker.sock
+
+      # Temporary working directory for Kestra tasks.
+      - /tmp/kestra-wd:/tmp/kestra-wd
+
+    env_file:
+      - .env
+
+    environment:
+      KESTRA_CONFIGURATION: |
+        plugins:
+          configurations:
+            - type: io.kestra.plugin.scripts.runner.docker.Docker
+              values:
+                volume-enabled: true
+            - type: io.kestra.plugin.fs.local
+              values:
+                allowed-paths:
+                  - /rag-data
+        datasources:
+          postgres:
+            url: jdbc:postgresql://kestra-postgres:5432/kestra
+            driverClassName: org.postgresql.Driver
+            username: ${PGK_USER}
+            password: ${PGK_PASSWORD}
+
+        kestra:
+          server:
+            basic-auth:
+              username: ${KESTRA_USER}
+              password: ${KESTRA_PASSWORD}
+
+          repository:
+            type: postgres
+
+          storage:
+            type: local
+            local:
+              base-path: "/app/storage"
+
+          queue:
+            type: postgres
+
+          tasks:
+            tmp-dir:
+              path: /tmp/kestra-wd/tmp
+
+          url: http://localhost:8080/
+
+      # Secrets yang akan dibaca oleh Kestra
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+    ports:
+      - "8080:8080"
+
+    networks:
+      - zoomcamp_net
+
+    depends_on:
+      kestra-postgres:
+        condition: service_healthy
+
+
+# ==============================================================
+# Network
+# ==============================================================
+networks:
+  zoomcamp_net:
+    name: zoomcamp_net
+    driver: bridge
+
+
+# ==============================================================
+# Volumes
+# ==============================================================
+volumes:
+  pgdata:
+    name: pgdata
+
+  kestra_pgdata:
+    name: kestra_pgdata
+
+  kestra_data:
+    name: kestra_data
