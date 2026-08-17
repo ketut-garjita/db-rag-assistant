@@ -290,7 +290,7 @@ The repository includes 116 healthcare-specific retrieval evaluation questions i
 
 **Using Docker Compose**
 
-### Platform (Host): Windows**
+### Platform (Host): Windows
 
 Pre-requites:
 - python
@@ -317,7 +317,7 @@ Pre-requites:
    docker compose up -d --build
    ```
    
-5. Review all (7) containers running
+5. Review all (7) containers up and running
    ```
    docker ps
    ```
@@ -370,7 +370,7 @@ Pre-requites:
    copy rag/nl2sql-local.py rag/nl2sql.py
    ```
    
-11. Restart app (dag-rag-assistant-app)
+11. Restart app (db-rag-assistant-app)
 
     ```
     docker compose down app
@@ -483,14 +483,14 @@ Pre-requites:
         
         *Note:*
     
-           Another way to create kestra flow:
+           Another way to create and execute kestra flow:
             - Goto to the menu Flows --> +Create
             - In other session, open the `kestra/flows/rag_ingestion.yaml` file using Notepad editor    
             - Copy & paste the content into Kestra Flows Editor
             - Save
             - Execute
     
-17. Make ingestion trigger running hourly --> Press the Topology menu.    
+17. Make ingestion trigger running hourly --> Press the Topology tab.    
 
      ![rag_ingestiom_trigger](assets/rag-ingestion-trigger.gif) 
     
