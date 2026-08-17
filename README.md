@@ -15,7 +15,7 @@ Two assistants share one knowledge base and one monitoring stack:
 - [3. Architecture](#3-architecture)
 - [4. Project Structure](#4-project-structure)
 - [5. Technology / Tools](#5-technology--tools)
-- [6. Flowing Ingestion](#6-flowing-ingestion--project-structure)
+- [6. Flowing Ingestion](#6-flowing-ingestion)
 - [7. Choosing Models](#7-choosing-models)
 - [8. Retrieval](#8-retrieval)
 - [9. How to Run](#9-how-to-run)
