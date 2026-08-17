@@ -269,7 +269,7 @@ LLM_MODEL="qwen/qwen3.6-27b"
  
  *Notes:*
  - By default .env file is for local model
- - I prepare three .env files namely: `.env`, `.env.local` & `.env.cloud`
+ - I have prepared three .env files namely: `.env`, `.env.local` & `.env.cloud`
  - You can copy `.env.cloud` to `.env` if you want to use cloud model. Set API_Key and model parameters on .env file.
    
 ## 8. Retrieval
