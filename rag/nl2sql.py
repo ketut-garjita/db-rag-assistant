@@ -1,6 +1,6 @@
 """
 nl2sql.py — Natural Language to SQL feature for db-rag-assistant
-Note: Cloud Model Version (such as Grok, Gemini, OpenAI. etc)
+Note: Local Model Version (such as Ollama)
 
 Flow:
   1. Retrieve relevant schema context from the doc_chunks table (the
@@ -126,50 +126,24 @@ Rules:
 
 
 def generate_sql(question: str, schema_context: str) -> str:
-    client = OpenAI(
-        api_key=OPENAI_API_KEY,
-        base_url=OPENAI_BASE_URL,
-        timeout=LLM_TIMEOUT_SECONDS,
-        max_retries=0,
-    )
-
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {
-            "role": "user",
-            "content": (
-                f"Schema context:\n{schema_context}"
-                f"\n\nQuestion: {question}\n\nSQL:"
-            ),
-        },
-    ]
-
-    extra_params = {}
-    if (
-        OPENAI_BASE_URL
-        and "ollama" in OPENAI_BASE_URL.lower()
-        and LLM_REASONING_EFFORT
-    ):
-        extra_params["reasoning_effort"] = LLM_REASONING_EFFORT
+    client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL, timeout=LLM_TIMEOUT_SECONDS, max_retries=0)
 
     resp = client.chat.completions.create(
         model=LLM_MODEL,
-        messages=messages,
         temperature=0,
         max_tokens=LLM_MAX_TOKENS,
-        **extra_params,
+        **({"reasoning_effort": LLM_REASONING_EFFORT} if OPENAI_BASE_URL and "ollama" in OPENAI_BASE_URL.lower() and LLM_REASONING_EFFORT else {}),
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": f"Schema context:\n{schema_context}\n\nQuestion: {question}\n\nSQL:",
+            },
+        ],
     )
-
     sql = resp.choices[0].message.content.strip()
-
-    # Strip a code fence in case the model wraps it anyway.
-    sql = re.sub(
-        r"^```(?:sql)?|```$",
-        "",
-        sql,
-        flags=re.IGNORECASE | re.MULTILINE,
-    ).strip()
-
+    # strip a code fence in case the model wraps it anyway
+    sql = re.sub(r"^```(sql)?|```$", "", sql, flags=re.IGNORECASE | re.MULTILINE).strip()
     return sql
 
 
