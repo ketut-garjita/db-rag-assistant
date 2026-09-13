@@ -495,7 +495,7 @@ Run with:
 cd to the repository HOME 
 
 ```
-docker compose exec app python evaluation/evaluate.py`
+docker compose exec app python evaluation/evaluate.py
 ```
 
 ![evaluation-target](assets/evaluation-target.png)
