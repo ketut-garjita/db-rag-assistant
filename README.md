@@ -236,41 +236,42 @@ The generation step uses the OpenAI SDK, which also works against any OpenAI-com
 3. Install a model: `ollama pull gemma3:4b`
 Several Ollama models were pulled and tested against this project's actual questions, comparing response quality and latency side-by-side on the [monitoring dashboard](#monitoring-dashboard) (`response_time_s` per model, plus manually reviewing `answer` in `query_logs`).
 
-The following models have already been used and tested.
-```
-NAME                     ID              SIZE
-llama3:8b                365c0bd3c000    4.7 GB    
-ministral-3:3b           f04aa1c738f6    3.0 GB   
-qwen3:8b                 500a1f067a9f    5.2 GB 
-gemma3:4b                a2af6cc3eb7f    3.3 GB
-```
-Default model: **gemma3:4b** model.
+    The following models have already been used and tested.
+    ```
+    NAME                     ID              SIZE
+    llama3:8b                365c0bd3c000    4.7 GB    
+    ministral-3:3b           f04aa1c738f6    3.0 GB   
+    qwen3:8b                 500a1f067a9f    5.2 GB 
+    gemma3:4b                a2af6cc3eb7f    3.3 GB
+    ```
+    Default model: **gemma3:4b** model.
 
 4. In .env file, set:
-```
-OPENAI_API_KEY=ollama
-OPENAI_BASE_URL=http://ai_ollama:11434/v1  
-LLM_MODEL=gemma3:4b
-#LLM_MODEL=qwen3:8b
-#LLM_MODEL=ministral-3:3b
-#LLM_MODEL=gemma3:4b
-```
 
-### Cloud Model
-1. Choose free cloud model interface such is Groq [Goq](https://grok.com/)
-2. Get API Key: [Groq API Key](https://console.groq.com/keys)
-3. Use the **qwen/qwen3.6-27b** model
-4. Setup .env file
-```
-OPENAI_API_KEY=<your API Key>
-OPENAI_BASE_URL="https://api.groq.com/openai/v1"
-LLM_MODEL="qwen/qwen3.6-27b" 
-```
- 
- *Notes:*
- - By default .env file is for local model
- - I have prepared three .env files namely: `.env`, `.env.local` & `.env.cloud`
- - You can copy `.env.cloud` to `.env` if you want to use cloud model. Set API_Key and model parameters on .env file.
+    ```
+    OPENAI_API_KEY=ollama
+    OPENAI_BASE_URL=http://ai_ollama:11434/v1  
+    LLM_MODEL=gemma3:4b
+    #LLM_MODEL=qwen3:8b
+    #LLM_MODEL=ministral-3:3b
+    #LLM_MODEL=gemma3:4b
+    ```
+
+    ### Cloud Model
+    1. Choose free cloud model interface such is Groq [Goq](https://grok.com/)
+    2. Get API Key: [Groq API Key](https://console.groq.com/keys)
+    3. Use the **qwen/qwen3.6-27b** model
+    4. Setup .env file
+    ```
+    OPENAI_API_KEY=<your API Key>
+    OPENAI_BASE_URL="https://api.groq.com/openai/v1"
+    LLM_MODEL="qwen/qwen3.6-27b" 
+    ```
+    
+    *Notes:*
+    - By default .env file is for local model
+    - I have prepared three .env files namely: `.env`, `.env.local` & `.env.cloud`
+    - You can copy `.env.cloud` to `.env` if you want to use cloud model. Set API_Key and model parameters on .env file.
    
 ## 8. Retrieval
 --> exact table match + hybrid search + optional re-ranking
@@ -290,39 +291,63 @@ The repository includes 116 healthcare-specific retrieval evaluation questions i
 
 **Using Docker Compose**
 
-### Platform (Host): Windows
-
 Pre-requites:
 - python
 - git
-- Docker Dekstop (Windows)
+- Docker & Docker Compose (Linux)
+- Docker Dekstop (Windows), make it up & running
 
 #### STEPS
 
-1. Open (Start) Windows Docker Desktop 
-
-2. Clone repository
+1. Clone repository
    ```
    cd
    git clone https://github.com/ketut-garjita/db-rag-assistant.git
    ```
-3. Goto the repository home directory
+2. Goto the repository home directory
 
    ```
    cd db-rag-assistant
    ```
-4. Execute docker compose
+3. Execute docker compose
+    
+    *Option A: Using Local Model under Ollama*
 
-   ```
-   docker compose up -d --build
-   ```
+    ```
+    cp docker-compose-with-ollama.yml docker-compose.yml
+    copy .env.local .env
+    copy rag/nl2sql-local.py rag/nl2sql.py
+    docker compose up -d --build
+    ```
+
+    Install model
+
+    ```
+    docker exec ai_ollama ollama list
+    docker exec ai_ollama ollama pull gemma3:4b
+    docker exec ai_ollama ollama list
+    ```
+
+    *Option B: Using Cloud Model*
+    
+    **Provide API_Key and model on .env file !!**
+
+      OPENAI_API_KEY=xxxxxxxxxx
+
+    ```
+    cp docker-compose-without-ollama.yml docker-compose.yml
+    copy .env.cloud .env
+    copy rag/nl2sql-cloud.py rag/.nl2sql.py
+    docker compose up -d --build
+    ```
    
-5. Review all (7) containers up and running
+4. Review all (7) containers up and running (healthy)
+
    ```
    docker ps
    ```
-   ![docker-ps](assets/docker-ps.png)
 
+   ![docker-ps](assets/docker-ps.png)
    
     If there are any containers that are not running, execute the command below:
 
@@ -331,62 +356,26 @@ Pre-requites:
    ```
    
    *Note:*
-   First time the Postgres volume is initialized, the 17 table of "Healthcare Data Platform" tables automatically created and populated from `db/schema.sql`. In addition, `doc_chunks` and `query_logs` tables also created.
-   
-   
-6. Install model
-   ```
-   docker exec ai_ollama ollama list
-   docker exec ai_ollama ollama pull gemma3:4b
-   docker exec ai_ollama ollama list
-   ```
-7. Ingest local file
+
+   First time the Postgres volume is initialized, the 17 table of "Healthcare Data Platform" tables automatically created and populated from `db/schema.sql`. In addition, `doc_chunks` and `query_logs` tables also created.   
+
+5. Ingest local file
     ```
     docker exec db-rag-app python /app/rag/ingestion/ingest.py --source /app/data --source-type local_file
     ```
     ![ingest-local-file](assets/ingest-local-file.png)
    
-8. Ingest db catalog
+6. Ingest db catalog
    ```
    docker exec db-rag-app python /app/rag/ingestion/ingest.py --source "host=db port=5432 dbname=postgres user=postgres password=postgres" --source-type db_catalog
    ```
     ![ingest-local-file](assets/ingest-db-catalog.png)
-   
-9. If using local model, use an existing `.env` file (default). The rag/nl2sql.py no changes.
-10. If using cloud model change `.env` with `.env.cloud` and `rag/nl2sql.py` with `rag/nl2sql.cloud.py`
-   
-   ```
-   copy .env.cloud .env
-   copy rag/nl2sql-cloud.py rag/.nl2sql.py
-   ```
-   
-   Provide API_Key and model on .env file.
 
-   *Note:*
-   If you want to switch using local model:
-   
-   ```   
-   copy .env.local .env
-   copy rag/nl2sql-local.py rag/nl2sql.py
-   ```
-   
-11. Restart app (db-rag-assistant-app)
-
-    ```
-    docker compose down app
-    docker compose up -d app
-    ```
-
-12. Check docker containers
-    ```
-    docker ps
-    ```
-
-13. Open the Streamlit App UI at [http://localhost:8501](http://localhost:8501)
+7. Open the Streamlit App UI at [http://localhost:8501](http://localhost:8501)
    
     ![Streamlit UI](assets/streamlit-8501.png)
    
-14. Type questions below one-by-one
+8. Type questions below one-by-one (for an example)
 
     After answered klick feedback (👍 or 👎)
 
@@ -417,16 +406,18 @@ Pre-requites:
     ![NLS2SQL](assets/Recording-NL2SQL-CM.gif)
 
     
-15. Monitoring Dashborad
+9. Monitoring Dashborad
 
     Open [http://localhost:8502](http://localhost:8502)
 
     ![montoring-dashboard](assets/monitoring-dashboard-8502.png)
     
-16. For next data ingestion via Kestra Orchestrator, follow steps below:
+10. For next data ingestion via `Kestra Orchestrator`, follow steps below:
+    
     - **Copy flow files from host to kestra using PowerShell**.
 
-        Use copy & paste the codes.
+        *Option 1: Using copy & paste the codes.*
+
         ```
         curl.exe -v `
           -u 'admin@kestra.io:Admin1234$' `
@@ -446,31 +437,31 @@ Pre-requites:
           -H 'Content-Type: application/x-yaml' `
           --data-binary '@./kestra/flows/rag_ingestion.yaml'
         ```
-        OR execute script below:
-    
-        Using CMD command:
 
-        ```
-        curl-kestra-flows.cmd
-        ```
-        Using PowerShell command:
+        *Option 2: Executing script using Powershell command*
     
         ```
         curl-kestra-flows-powershell.cmd
         ```
     
-    - **Open Kestra UI at** [http://localhost:8080](http://localhost:8080)
+    - **Open Kestra UI**
+
+      http://localhost:8080](http://localhost:8080)
+
       ```
         Username: admin@kestra.io
         Password: Admin1234$
       ```
-    ![Kestra Login](assets/kestra-login.png)
+
+      ![Kestra Login](assets/kestra-login.png)
     
     - **Execute**
       ```
       Flows --> rag_ingestion --> Execute --> Execute
       ```
-      *Notes: Refresh the page if getting the Connection interrupted message on the right bottom screen.*   
+      *Notes:*
+      
+      Refresh the page if getting the Connection interrupted message on the right bottom screen.*   
       
       ![rag-ingestion](assets/rag-ingestion.png)
     
@@ -479,63 +470,34 @@ Pre-requites:
    
       Note: Ingestion SUCCESS. Ignore the error below it.
    
-      ![ignore this error](assets/ignore-error-kestra.png)
+      ![ignore this error](assets/ignore-error-kestra.png)        
+    
+    - **Make ingestion trigger running hourly**
+
+      Press the Topology tab.    
+
+      ![rag_ingestiom_trigger](assets/rag-ingestion-trigger.gif) 
+
+      *Note:*
+
+        Another way to create and execute kestra flow:
+        - Goto to the menu Flows --> +Create
+        - In other terminal, open the `kestra/flows/rag_ingestion.yaml` file using Notepad editor    
+        - Copy & paste the content into Kestra Flows Editor
+        - Save
+        - Execute
         
-        *Note:*
-    
-           Another way to create and execute kestra flow:
-            - Goto to the menu Flows --> +Create
-            - In other session, open the `kestra/flows/rag_ingestion.yaml` file using Notepad editor    
-            - Copy & paste the content into Kestra Flows Editor
-            - Save
-            - Execute
-    
-17. Make ingestion trigger running hourly --> Press the Topology tab.    
-
-     ![rag_ingestiom_trigger](assets/rag-ingestion-trigger.gif) 
-    
-
-### Running on Virtual Machine (VM)
-
-**Use only Cloud Model (not Ollama)** 
-
-If you wish to use a Virtual Machine (VM) as the host, follow the same steps outlined above, ensuring that:
-- Python, Git, Docker and Docker Compose have been installed.
-- Clone repository
-  ```
-  cd
-  git clone https://github.com/ketut-garjita/db-rag-assistant.git
-  ```
-- Goto the repository home directory
-  ```
-  cd db-rag-assistant
-  ```
-- No need to install Ollama
-  
-  Rename docker-compose-without-ollama.yml to docker-compose.yml
-  
-  ```
-  mv docker-compose-without-ollama.yml docker-compose.yml
-  ```
-  
-- Follow [9. How to Run](#9-how-to-run) steps: 4, 5, 7, 8, 10, 11, 12. 13, 14, 15, 16, 17
-  
-- Note: Use cp instead of copy command
-- Type command below (step 16): Copy flow files from host to kestra using bash command
-  ```
-  chmod +x curl-kestra-flows.sh
-  ./curl-kestra-flows.sh
-  ```
-
     
 ## 10. Evaluation Targets (optional)
 
 Run with:
 
-cd to the project HOME directory
+cd to the repository HOME 
+
 ```
 docker compose exec app python evaluation/evaluate.py`
 ```
+
 ![evaluation-target](assets/evaluation-target.png)
 
 - **Retrieval**: hit-rate and Mean Reciprocal Rank (MRR), compared across
@@ -575,89 +537,122 @@ onto the same `'up'`/`'down'` values transparently:
 
 ## 12. Cloud Deployment (GCP — live)
 
-Deployed and verified working on Google Cloud via Terraform (`infra/gcp/`):
-**Cloud Run** (`db-rag-app` + `db-rag-monitoring`, mirroring the two
-Streamlit services in `docker-compose.yml`), **Cloud SQL for PostgreSQL**
-(pgvector extension, region `asia-southeast2`), **Artifact Registry**,
-and **Secret Manager** for credentials. The LLM provider is
-[Groq](https://groq.com) (OpenAI-compatible endpoint, model
-`qwen/qwen3.6-27b`) rather than a locally-hosted model — see
-"Design decisions" below for why.
-
-`ollama`, `pgadmin`, and `kestra` are intentionally **not** reproduced in
-this cloud deployment — see "Design decisions" below.
+See: README-Cloud-Deployment.md
 
 #### Steps
 
 1. Install the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install)
    and Terraform ≥ 1.5.
+
 2. Authenticate — **two separate logins are required**, for two different
    consumers of your Google credentials:
+
    ```bash
    gcloud auth login                          # for the gcloud CLI / docker push
    gcloud auth application-default login      # for Terraform's google provider
    gcloud config set project <project_id>
    ```
-3. `cd infra/gcp && cp terraform.tfvars.example terraform.tfvars`, fill in
-   real values (never commit this file — it's in `.gitignore`). Set
-   `region` to wherever you want to deploy (`asia-southeast2` / Jakarta is
-   confirmed to support every service this project uses).
+
+3. Copy terraform.tfvars.example to terraform.tfvars
+
+    ```bash
+    cd infra/gcp && cp terraform.tfvars.example terraform.tfvars
+    ```
+    
+    Fill in real values (never commit this file — it's in `.gitignore`). Set `region` to wherever you  want to deploy.
+
 4. Create the Artifact Registry repo first — you need it to exist before
    you can push an image to it:
+   
    ```bash
    terraform init
    terraform apply -target=google_artifact_registry_repository.repo
    ```
-5. Build and push the image (from the **repo root**, where the
-   `Dockerfile` is — not from `infra/gcp/`):
+
+5. Build and push the image (from the **repo root**, where the `Dockerfile` is — not from `infra/gcp/`):
    ```bash
    gcloud auth configure-docker <region>-docker.pkg.dev
    docker build -t <region>-docker.pkg.dev/<project_id>/db-rag-assistant/app:latest .
    docker push <region>-docker.pkg.dev/<project_id>/db-rag-assistant/app:latest
    ```
-   Put that exact URI in `terraform.tfvars` as `app_image_tag`. If you're
-   using Groq (or any non-OpenAI provider), also set `openai_base_url` in
-   `terraform.tfvars` (e.g. `"https://api.groq.com/openai/v1"`) — leaving
-   it unset makes the app call real OpenAI, which will reject a key from
-   any other provider.
-6. `terraform apply` again to create everything else (Cloud SQL, secrets,
-   both Cloud Run services).
-7. **Initialize the Cloud SQL schema** (Terraform provisions the instance
-   but doesn't run SQL against it):
+
+   Put that exact URI in `terraform.tfvars` as `app_image_tag`. If you're using Cloud LLM provider such as OpenAI, Grox, Gemnini (or any non-OpenAI provider), also set `openai_base_url` in `terraform.tfvars` (e.g. `"https://api.groq.com/openai/v1"`).
+   
+   **Leaving it unset makes the app call real OpenAI, which will reject a key from any other provider.**
+
+6. Create everything else (Cloud SQL, secrets, both Cloud Run services).
+    ```bash
+    terraform apply
+    ```
+
+7. Initialize the Cloud SQL schema
+
+    Terraform provisions the instance but doesn't run SQL against it.
+
    ```bash
    gcloud sql connect db-rag-postgres --user=postgres
-   # then, in psql:
+   ```
+
+   then, in psql:
+   ```
    \i db/schema.sql
    ```
-8. **Populate `doc_chunks`.** Cloud Run has no `docker exec` — run
-   ingestion locally against the Cloud SQL instance through the Cloud SQL
-   Auth Proxy instead:
-   ```bash
-   # terminal 1 -- leave running
-   cloud-sql-proxy <project_id>:<region>:db-rag-postgres --port 5433
 
-   # terminal 2
-   docker run --rm \
-     -e PG_HOST=host.docker.internal -e PG_PORT=5433 \
-     -e PG_DB=postgres -e PG_USER=postgres -e PG_PASSWORD=<db_password> \
-     -e OPENAI_API_KEY=<key> -e OPENAI_BASE_URL=<base_url> -e LLM_MODEL=<model> \
-     <region>-docker.pkg.dev/<project_id>/db-rag-assistant/app:latest \
-     python /app/rag/ingestion/ingest.py --source /app/data --source-type local_file
+8. Populate `doc_chunks`
 
-   docker run --rm \
-     -e PG_HOST=host.docker.internal -e PG_PORT=5433 \
-     -e PG_DB=postgres -e PG_USER=postgres -e PG_PASSWORD=<db_password> \
-     -e OPENAI_API_KEY=<key> -e OPENAI_BASE_URL=<base_url> -e LLM_MODEL=<model> \
-     <region>-docker.pkg.dev/<project_id>/db-rag-assistant/app:latest \
-     python /app/rag/ingestion/ingest.py \
-       --source "host=host.docker.internal port=5433 dbname=postgres user=postgres password=<db_password>" \
-       --source-type db_catalog
-   ```
-   (Port 5433 rather than Postgres's default 5432 — see troubleshooting
-   below for why.)
-9. `terraform output` for the app and monitoring URLs.
+    Cloud Run has no `docker exec`.
+  
+    Run ingestion locally against the Cloud SQL instance through the Cloud SQL Auth Proxy instead:
 
-#### Design Decisions
+    **Note:**
+
+    Require values of:
+    - `<db_password>`
+    - `<key>` --> OPENAI_API_KEY
+    - `<base_url>` --> OPENAI_BASE_URL
+    - `<model>` --> LLM _MODEL
+    - `<project_id>`
+    - `<region>`
+
+    ```bash
+    # terminal 1 -- leave running
+    cloud-sql-proxy <project_id>:<region>:db-rag-postgres --port 5433
+
+    # terminal 2
+    docker run --rm \
+      -e PG_HOST=host.docker.internal \
+      -e PG_PORT=5433 \
+      -e PG_DB=postgres \
+      -e PG_USER=postgres \
+      -e PG_PASSWORD=<db_password> \
+      -e OPENAI_API_KEY=<key> \
+      -e OPENAI_BASE_URL=<base_url> \
+      -e LLM_MODEL=<model> <region>-docker.pkg.dev/<project_id>/db-rag-assistant/app:latest python /app/rag/ingestion/ingest.py \
+      --source /app/data \
+      --source-type local_file
+
+    docker run --rm \
+      -e PG_HOST=host.docker.internal \
+      -e PG_PORT=5433 \
+      -e PG_DB=postgres \
+      -e PG_USER=postgres \
+      -e PG_PASSWORD=<db_password> \
+      -e OPENAI_API_KEY=<key> \
+      -e OPENAI_BASE_URL=<base_url> \
+      -e LLM_MODEL=<model> <region>-docker.pkg.dev/<project_id>/db-rag-assistant/app:latest python /app/rag/ingestion/ingest.py \
+      --source "host=host.docker.internal port=5433 dbname=postgres user=postgres password=<db_password>" \
+      --source-type db_catalog
+    ```
+
+    (Port 5433 rather than Postgres's default 5432 — see troubleshooting below for why.)
+
+9. App and monitoring URLs
+
+    ```bash
+    terraform output
+    ```
+
+#### Cloud Design Decisions
 See [Cloud Design Decision](infra/gcp/doc/cloud-design-decisions.md)
 
 
