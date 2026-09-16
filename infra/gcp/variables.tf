@@ -31,7 +31,7 @@ variable "openai_api_key" {
 variable "llm_model" {
   description = "Model name to request from the LLM provider in this deployment"
   type        = string
-  default     = "qwen/qwen3.6-27b"
+  default     = "qwen/qwen3.8-27b"
 }
 
 variable "openai_base_url" {

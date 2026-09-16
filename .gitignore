@@ -34,3 +34,5 @@ terraform.tfvars
 *terraform/
 terraform.tfstate
 .tfvars
+
+infra/gcp/doc/windows-to-linux-migrate.md
