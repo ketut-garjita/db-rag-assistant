@@ -1,10 +1,14 @@
 """
 Evaluation suite for retrieval, generation, and NL-to-SQL generation.
 
-1. Retrieval evaluation: compares FOUR approaches (semantic-only,
-   keyword-only, hybrid, hybrid+cross-encoder-reranked) on hit-rate and
-   MRR, and reports the best one — this is what's actually used in
-   rag/pipeline.py (hybrid_search_reranked).
+1. Retrieval evaluation: compares FIVE approaches (semantic-only,
+   keyword-only, hybrid, hybrid+cross-encoder-reranked, and
+   hybrid+reranked-without-query-rewriting) on hit-rate and MRR, and
+   reports the best one. hybrid_search_reranked is what's actually used
+   in rag/pipeline.py; hybrid_reranked_no_rewrite exists purely to
+   isolate whether LLM query rewriting or cross-encoder reranking is
+   responsible when hybrid_reranked underperforms simpler approaches on
+   a given category (see hybrid_reranked_no_rewrite's docstring below).
 
    Two question sets are supported and merged automatically if both
    exist on disk:
@@ -165,11 +169,34 @@ def load_sql_eval_set(path: str = SQL_EVAL_PATH) -> list[dict]:
 # 1. Retrieval evaluation — compare multiple approaches
 # =============================================================================
 
+def hybrid_reranked_no_rewrite(query: str, top_k: int = 5) -> list[dict]:
+    """hybrid_search_reranked with LLM query rewriting forced off.
+
+    Added to isolate WHY hybrid_reranked underperforms semantic_only on
+    the paraphrase/multi_hop_anchor categories in the categorized eval
+    set: hybrid_search_reranked differs from plain hybrid_search in two
+    ways — (a) an LLM rewrites the query before retrieval, and (b) a
+    cross-encoder reranks the fused candidates. Comparing this approach
+    against "hybrid_reranked" (which uses config.ENABLE_QUERY_REWRITING,
+    True by default) tells you which of the two is responsible:
+      - if THIS approach's hit-rate/MRR is close to "hybrid" (no
+        regression), query rewriting is the culprit — the LLM rewrite is
+        likely injecting wording that drifts away from the paraphrased
+        question's actual intent before either retriever even runs.
+      - if THIS approach still regresses similarly to "hybrid_reranked",
+        the cross-encoder rerank step itself is the culprit — it's
+        mis-scoring paraphrased/multi-hop questions relative to the
+        bi-encoder cosine similarity used in semantic_search.
+    """
+    return hybrid_search_reranked(query, top_k=top_k, rewrite=False)
+
+
 RETRIEVAL_APPROACHES = {
     "semantic_only": semantic_search,
     "keyword_only": keyword_search,
     "hybrid": hybrid_search,
     "hybrid_reranked": hybrid_search_reranked,  # what rag/pipeline.py actually uses
+    "hybrid_reranked_no_rewrite": hybrid_reranked_no_rewrite,  # isolates rewrite vs. rerank
 }
 
 
@@ -439,3 +466,4 @@ if __name__ == "__main__":
                     print(f"  generated: {f['generated_SQL']}")
     else:
         print("\nSQL evaluation skipped. Use --with-sql-eval to check NL-to-SQL output against sql_eval_questions.json.")
+

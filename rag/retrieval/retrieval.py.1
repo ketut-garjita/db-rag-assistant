@@ -111,46 +111,19 @@ def semantic_search(query: str, top_k: int = 5) -> list[dict]:
     ]
 
 
-def _build_or_tsquery(query: str) -> str:
-    """Turn a free-form natural-language question into a tsquery that
-    OR-joins its terms, instead of relying on plainto_tsquery's implicit
-    AND.
-
-    plainto_tsquery('english', 'Find records with icd10_code = ''E11.9''')
-    produces roughly `find & record & icd10_cod & e11.9` — every one of
-    those terms, including filler verbs like "find"/"record" that will
-    almost never appear in a schema-documentation chunk, must be present
-    for the row to match at all. On full-sentence questions (which is
-    all of eval_questions*.json) this made keyword_search reject rows
-    that plainly contained the one term that mattered (e.g. "icd10_code",
-    "E11.9") just because they didn't also contain "find" or "record".
-
-    OR-joining lets ts_rank do its job: a chunk matching more of the
-    query's terms ranks higher, but a chunk matching just the one
-    meaningful term (a code, a column name) still matches at all, which
-    is the actual point of a keyword/BM25-style retriever. Stray noise
-    terms only dilute the top of the ranking, they no longer make every
-    relevant row invisible.
-    """
-    terms = re.findall(r"\w+", query)
-    return " | ".join(terms) if terms else query
-
-
 def keyword_search(query: str, top_k: int = 5) -> list[dict]:
-    tsquery_str = _build_or_tsquery(query)
-
     conn = psycopg2.connect(get_pg_dsn())
     cur = conn.cursor()
     cur.execute(
         """
         SELECT source_file, table_name, content,
-               ts_rank(to_tsvector('english', content), to_tsquery('english', %s)) AS rank
+               ts_rank(to_tsvector('english', content), plainto_tsquery('english', %s)) AS rank
         FROM doc_chunks
-        WHERE to_tsvector('english', content) @@ to_tsquery('english', %s)
+        WHERE to_tsvector('english', content) @@ plainto_tsquery('english', %s)
         ORDER BY rank DESC
         LIMIT %s
         """,
-        (tsquery_str, tsquery_str, top_k),
+        (query, query, top_k),
     )
     rows = cur.fetchall()
     cur.close()
@@ -290,4 +263,3 @@ def hybrid_search_reranked(
 
     candidates = _fuse(search_query, candidate_k)
     return rerank(search_query, candidates, top_k=top_k)
-
