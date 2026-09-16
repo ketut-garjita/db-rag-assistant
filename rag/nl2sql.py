@@ -69,6 +69,39 @@ def make_log_sources(tables, retrieval_ms, generation_ms):
         },
     }
 
+def clean_llm_sql(sql: str) -> str:
+    """Normalize LLM output into a single SQL statement."""
+
+    if not sql:
+        return ""
+
+    # Remove <think>...</think> reasoning blocks
+    sql = re.sub(
+        r"<think\b[^>]*>.*?</think\s*>",
+        "",
+        sql,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
+    # Remove markdown code fences
+    sql = re.sub(
+        r"```(?:sql)?",
+        "",
+        sql,
+        flags=re.IGNORECASE,
+    )
+
+    # Remove any remaining closing fence
+    sql = sql.replace("```", "")
+
+    # Normalize whitespace
+    sql = sql.strip()
+
+    # Remove trailing semicolon
+    sql = sql.rstrip(";").strip()
+
+    return sql
+
 
 # --- 1. Retrieve schema context from doc_chunks (pgvector) -----------------
 
@@ -120,32 +153,98 @@ Rules:
 - Only SELECT statements. Never write/alter/delete data or schema.
 - Never use INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, GRANT, CREATE.
 - Use only tables/columns that appear in the provided schema context.
-- If the question cannot be answered from the schema, reply exactly: NO_QUERY
-- Do not include explanations, markdown, or code fences. SQL only.
+- If the question cannot be answered from the schema, reply exactly: NO_QUERY.
+- Do not include explanations.
+- Do not include markdown.
+- Do not include code fences.
+- Do not include SQL comments.
+- Output exactly one SQL statement.
+- Do not include reasoning.
+- Do not output <think>...</think> blocks.
+- Do not include a trailing semicolon.
 """
 
 
 def generate_sql(question: str, schema_context: str) -> str:
-    client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL, timeout=LLM_TIMEOUT_SECONDS, max_retries=0)
+    client = OpenAI(
+        api_key=OPENAI_API_KEY,
+        base_url=OPENAI_BASE_URL,
+        timeout=LLM_TIMEOUT_SECONDS,
+        max_retries=0,
+    )
 
     resp = client.chat.completions.create(
         model=LLM_MODEL,
         temperature=0,
         max_tokens=LLM_MAX_TOKENS,
-        **({"reasoning_effort": LLM_REASONING_EFFORT} if OPENAI_BASE_URL and "ollama" in OPENAI_BASE_URL.lower() and LLM_REASONING_EFFORT else {}),
+        **(
+            {"reasoning_effort": LLM_REASONING_EFFORT}
+            if (
+                OPENAI_BASE_URL
+                and "ollama" in OPENAI_BASE_URL.lower()
+                and LLM_REASONING_EFFORT
+            )
+            else {}
+        ),
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
-                "content": f"Schema context:\n{schema_context}\n\nQuestion: {question}\n\nSQL:",
+                "content": (
+                    f"Schema context:\n{schema_context}\n\n"
+                    f"Question: {question}\n\n"
+                    "SQL:"
+                ),
             },
         ],
     )
-    sql = resp.choices[0].message.content.strip()
-    # strip a code fence in case the model wraps it anyway
-    sql = re.sub(r"^```(sql)?|```$", "", sql, flags=re.IGNORECASE | re.MULTILINE).strip()
+
+    # ============================================================
+    # RAW MODEL OUTPUT
+    # ============================================================
+    raw_sql = resp.choices[0].message.content or ""
+
+    print("\n========== RAW LLM OUTPUT ==========")
+    print(repr(raw_sql))
+    print("====================================")
+
+    sql = clean_llm_sql(raw_sql)
+
+    print("\n========== CLEANED SQL ==========")
+    print(repr(sql))
+    print("=================================")
+
     return sql
 
+
+    # ============================================================
+    # REMOVE MARKDOWN CODE FENCES
+    # ============================================================
+    sql = re.sub(
+        r"```(?:sql)?",
+        "",
+        sql,
+        flags=re.IGNORECASE,
+    )
+
+    sql = sql.replace("```", "")
+
+    # ============================================================
+    # CLEAN WHITESPACE
+    # ============================================================
+    sql = sql.strip()
+
+    # Remove trailing semicolon
+    sql = sql.rstrip(";").strip()
+
+    # ============================================================
+    # DEBUG
+    # ============================================================
+    print("\n========== CLEANED SQL ==========")
+    print(repr(sql))
+    print("=================================")
+
+    return sql
 
 # --- 3. Query validation (guardrail) ----------------------------------------
 
@@ -160,7 +259,7 @@ def validate_sql(sql: str) -> Optional[str]:
     if not sql or sql.strip().upper() == "NO_QUERY":
         return "The question cannot be answered from the available schema."
 
-    stripped = sql.strip().rstrip(";")
+    stripped = sql.strip().rstrip(";").strip()
 
     if ";" in stripped:
         return "Only a single SQL statement is allowed."
@@ -175,7 +274,7 @@ def validate_sql(sql: str) -> Optional[str]:
 
 
 def add_limit_if_missing(sql: str, default_limit: int = 200) -> str:
-    stripped = sql.strip().rstrip(";")
+    stripped = sql.strip().rstrip(";").strip()
     if re.search(r"\blimit\s+\d+\b", stripped, re.IGNORECASE):
         return stripped
     return f"{stripped}\nLIMIT {default_limit}"
@@ -255,6 +354,14 @@ def ask_sql(question: str) -> Tuple[str, Optional[pd.DataFrame], Optional[str], 
     # -------------------------
     # Validation
     # -------------------------
+    print("\n========== NL2SQL DEBUG ==========")
+    print("MODEL:", LLM_MODEL)
+    print("BASE URL:", OPENAI_BASE_URL)
+    print("RAW SQL repr:", repr(sql))
+    print("SEMICOLON POSITIONS:", [m.start() for m in re.finditer(";", sql)])
+    print("VALIDATION:", validate_sql(sql))
+    print("==================================\n")
+
     err = validate_sql(sql)
 
     if err:

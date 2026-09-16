@@ -3,7 +3,8 @@
 # API keys have been stripped from them; only local-setup passwords
 # remain, so course reviewers can reproduce and grade this repository
 # without extra setup.
-terraform.tfvars
+
+.env
 
 # Python
 __pycache__/
@@ -27,11 +28,9 @@ anaconda_projects/
 *.db
 
 # Terraform
-terraform/
-**/.terraform/
-*.tfstate
-*.tfstate.backup
-
-# Terraform
-.terraform/
+terraform.tfvars
 *.tfstate.*
+**/.terraform/
+*terraform/
+terraform.tfstate
+.tfvars

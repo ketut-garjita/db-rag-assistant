@@ -25,7 +25,9 @@ Two assistants share one knowledge base and one monitoring stack:
 - [13. Improvements](#13-improvements)
 - [14. Evaluation Criterias](#14-evaluation-criterias)
 - [15. Acknowledgments](#15-acknowledgments)
-  
+
+---
+
 ## 1. Problem Statement
 
 Engineering/DBA teams often waste time hunting for schema information:
@@ -35,16 +37,22 @@ people who have since left the company.
 This project indexes all schema documentation (DDL, table/column comments, design notes) into a vector database, then uses an LLM to answer
 Natural-Language questions with relevant context — including citing the source (which table/file the answer came from).
 
+---
+
 ## 2. Data Sources
 
 Source documents: DDL files (`CREATE TABLE ...`), a `schema_notes.md` file with business-level descriptions per table, and (optionally) an `information_schema` dump from a live database. A minimal example schema of the "Healthcare Data Platform" is provided under `data/`. Other real-world source types are also supported by the ingestion pipeline — e.g. official PostgreSQL documentation pages, internal wikis, or any text/markdown knowledge base (see the "Flowing ingestion" section below).
 
 **ER Diagram & seed data (Healthcare Data Platform example)**
 
+Note: We can implement in any application databases.
+
 ![ER-Diagram](./assets/ER.png)
 
 - `db/schemas.sql` — full DDL for the Healthcare 17 tables including seed data, doc_chunks and query_logs tables
 - seed data — representative dummy data (166 rows across 17 tables: 10 patients, 12 encounters covering both outpatient and ER visits, insurance claims in approved/partial/rejected states, etc.).
+
+---
 
 ## 3. Architecture
 
@@ -76,6 +84,8 @@ flowchart TD
 - **Retrieval + Generation**: `rag/pipeline.py`
 - **Evaluation**: `evaluation/evaluate.py` — retrieval hit-rate & MRR, plus LLM-as-judge for answer quality
 - **UI**: `app/streamlit_app.py`
+
+---
 
 ## 4. Project Structure
 
@@ -119,7 +129,7 @@ db-rag-assistant
     |       eval_questions.json                       # json file example for evaluation
     |
     +---infra
-    |   \---gcp                                       # Setup for Cloud deployment using Infrastructure as Code of Terraform 
+    |   /---gcp                                       # Setup for Cloud deployment using Infrastructure as Code of Terraform 
     |       |   main.tf
     |       |   outputs.tf
     |       |   terraform.tfstate
@@ -129,7 +139,7 @@ db-rag-assistant
     |       |   versions.tf
     |       |
     +---kestra                                        # incremental-ingestion orchestration
-    |   \---flows
+    |   /--flows
      |          db_catalog_ingestion.yaml             # source-typpe=local_file
     |           local_file_ingestion.yaml             # source-typpe=db_catalog          
     |           rag_ingestion.yaml                    # source-typpe=local_file & db_catalog in one flow
@@ -157,6 +167,7 @@ db-rag-assistant
                 retrieval.py                          # hybrid search (semantic+keyword) plus a cross-encoder re-ranking stage on top of it
 
 ```
+---
 
 ## 5. Technology / Tools
 
@@ -172,6 +183,8 @@ db-rag-assistant
 | **pandas** | Data wrangling for the monitoring dashboard and evaluation scripts |
 | **psycopg2** | Direct PostgreSQL access for ingestion, retrieval, logging, and NL2SQL query execution |
 | **Terraform** | Infrastructure-as-code for cloud deployment (GCP) - see [Ch 12. Cloud Deployment](#12-cloud-deployment-gcp--live)
+
+---
 
 ## 6. Flowing Ingestion 
 Flowing ingestion are incremental, not one-shot.
@@ -191,27 +204,21 @@ Inside app service (container: db-rag-app)
 - source-type=local_file
 - Command:
   ```
-  python /app/rag/ingestion/ingest.py --source /app/data --source-type local_file
+  docker exec db-rag-app python /app/rag/ingestion/ingest.py --source /app/data --source-type local_file
   ```
 
 ### Ingesting db_catalog
 source-type=db_catalog
-Besides local files, `ingest.py` also supports introspecting a real
-PostgreSQL database's `information_schema` and `pg_catalog` directly — no
-manual `schema_notes.md` needed. It auto-generates one chunk per table:
-columns, data types, PK/FK relationships, nullability, and any
-`COMMENT ON TABLE`/`COMMENT ON COLUMN` text already set on that database.
-(see `db/schemas.sql` for an example schema with such comments).
+Besides local files, `ingest.py` also supports introspecting a real PostgreSQL database's `information_schema` and `pg_catalog` directly — no manual `schema_notes.md` needed. It auto-generates one chunk per table:
+columns, data types, PK/FK relationships, nullability, and any `COMMENT ON TABLE`/`COMMENT ON COLUMN` text already set on that database. (see `db/schemas.sql` for an example schema with such comments).
 
 Command:
 
-```
-python /app/rag/ingestion/ingest.py --source "host=db port=5432 dbname=postgres user=postgres password=postgres" --source-type db_catalog
-```
+    ```
+    docker exec db-rag-app python /app/rag/ingestion/ingest.py --source "host=db port=5432 dbname=postgres user=postgres password=postgres" --source-type db_catalog
+    ```
 
-The `--source` value is a standard libpq connection string pointing at the database you want documented (it can be a different database/schema
-than the one storing `doc_chunks`). Running this against the Healthcare Data Platform example (after loading `db/healthcare_ddl.sql`) would index all 17 tables automatically, keeping documentation in sync with the actual schema — no drift between docs and reality. Like `local_file`,
-it's incremental: only tables whose structure changed get re-embedded.
+The `--source` value is a standard libpq connection string pointing at the database you want documented (it can be a different database/schema than the one storing `doc_chunks`). Running this against the Healthcare Data Platform example (after loading `db/healthcare_ddl.sql`) would index all 17 tables automatically, keeping documentation in sync with the actual schema — no drift between docs and reality. Like `local_file`, it's incremental: only tables whose structure changed get re-embedded.
 
 ### Ingesting with Kestra Orchestrator
 
@@ -225,6 +232,8 @@ The flows at:
 4. Dual triggers: **scheduled** (hourly cron) and **on-demand** via webhook
    (call it right after editing `/app/data/` or the target schema)
 5. Logs a failure message if any task fails (visible in the Kestra UI)
+
+---
 
 ## 7. Choosing Models
 
@@ -260,18 +269,20 @@ Several Ollama models were pulled and tested against this project's actual quest
     ### Cloud Model
     1. Choose free cloud model interface such is Groq [Goq](https://grok.com/)
     2. Get API Key: [Groq API Key](https://console.groq.com/keys)
-    3. Use the **qwen/qwen3.6-27b** model
+    3. Use the **qwen/qwen3.8-27b** model
     4. Setup .env file
     ```
     OPENAI_API_KEY=<your API Key>
     OPENAI_BASE_URL="https://api.groq.com/openai/v1"
-    LLM_MODEL="qwen/qwen3.6-27b" 
+    LLM_MODEL="qwen/qwen3.8-27b" 
     ```
     
     *Notes:*
-    - By default .env file is for local model
     - I have prepared three .env files namely: `.env`, `.env.local` & `.env.cloud`
-    - You can copy `.env.cloud` to `.env` if you want to use cloud model. Set API_Key and model parameters on .env file.
+    - Copy `.env.cloud` to `.env` if you want to use cloud model. Set API_Key and model parameters on .env file.
+    - Copy `.env.local' to `'.env' for local model.
+
+---
    
 ## 8. Retrieval
 --> exact table match + hybrid search + optional re-ranking
@@ -287,6 +298,8 @@ For Ollama/Qwen3, `LLM_REASONING_EFFORT=none` disables the extra thinking pass, 
 
 The repository includes 116 healthcare-specific retrieval evaluation questions in `evaluation/eval_questions.json`, covering all 17 healthcare tables and both direct and conceptual retrieval cases.
 
+---
+
 ## 9. How to run
 
 **Using Docker Compose**
@@ -295,7 +308,6 @@ Pre-requites:
 - python
 - git
 - Docker & Docker Compose (Linux)
-- Docker Dekstop (Windows), make it up & running
 
 #### STEPS
 
@@ -310,13 +322,31 @@ Pre-requites:
    cd db-rag-assistant
    ```
 3. Execute docker compose
+
+    *Option A: Using Cloud Model*
     
-    *Option A: Using Local Model under Ollama*
+    **Provide API_Key and model on .env file !!**
+    ```
+    cp docker-compose-without-ollama.yml docker-compose.yml    
+    cp rag/nl2sql-cloud.py rag/.nl2sql.py
+    cp .env.cloud .env
+    ```
+
+    Open .env file, set:
+
+    OPENAI_API_KEY=
+    LLM_MODEL="qwen/qwen3.8-27b"
+
+    ``` 
+    docker compose up -d --build
+    ```
+    
+    *Option B: Using Local Model under Ollama*
 
     ```
     cp docker-compose-with-ollama.yml docker-compose.yml
-    copy .env.local .env
-    copy rag/nl2sql-local.py rag/nl2sql.py
+    cp .env.local .env
+    cp rag/nl2sql-local.py rag/nl2sql.py
     docker compose up -d --build
     ```
 
@@ -326,22 +356,9 @@ Pre-requites:
     docker exec ai_ollama ollama list
     docker exec ai_ollama ollama pull gemma3:4b
     docker exec ai_ollama ollama list
-    ```
-
-    *Option B: Using Cloud Model*
-    
-    **Provide API_Key and model on .env file !!**
-
-      OPENAI_API_KEY=xxxxxxxxxx
-
-    ```
-    cp docker-compose-without-ollama.yml docker-compose.yml
-    copy .env.cloud .env
-    copy rag/nl2sql-cloud.py rag/.nl2sql.py
-    docker compose up -d --build
-    ```
+    ```    
    
-4. Review all (7) containers up and running (healthy)
+3. Review all (6 if using cloud model & 6 if using local model) containers up and running healthy.
 
    ```
    docker ps
@@ -359,23 +376,23 @@ Pre-requites:
 
    First time the Postgres volume is initialized, the 17 table of "Healthcare Data Platform" tables automatically created and populated from `db/schema.sql`. In addition, `doc_chunks` and `query_logs` tables also created.   
 
-5. Ingest local file
+4. Ingest local file
     ```
     docker exec db-rag-app python /app/rag/ingestion/ingest.py --source /app/data --source-type local_file
     ```
     ![ingest-local-file](assets/ingest-local-file.png)
    
-6. Ingest db catalog
+5. Ingest db catalog
    ```
    docker exec db-rag-app python /app/rag/ingestion/ingest.py --source "host=db port=5432 dbname=postgres user=postgres password=postgres" --source-type db_catalog
    ```
     ![ingest-local-file](assets/ingest-db-catalog.png)
 
-7. Open the Streamlit App UI at [http://localhost:8501](http://localhost:8501)
+6. Open the Streamlit App UI at [http://localhost:8501](http://localhost:8501)
    
     ![Streamlit UI](assets/streamlit-8501.png)
    
-8. Type questions below one-by-one (for an example)
+7. Type questions below one-by-one (for an example)
 
     After answered klick feedback (👍 or 👎)
 
@@ -406,43 +423,18 @@ Pre-requites:
     ![NLS2SQL](assets/Recording-NL2SQL-CM.gif)
 
     
-9. Monitoring Dashborad
+8. Monitoring Dashborad
 
     Open [http://localhost:8502](http://localhost:8502)
 
     ![montoring-dashboard](assets/monitoring-dashboard-8502.png)
     
-10. For next data ingestion via `Kestra Orchestrator`, follow steps below:
+9. For next data ingestion via `Kestra Orchestrator`, follow steps below:
     
-    - **Copy flow files from host to kestra using PowerShell**.
-
-        *Option 1: Using copy & paste the codes.*
+    - **Copy flow files from host to kestra**.
 
         ```
-        curl.exe -v `
-          -u 'admin@kestra.io:Admin1234$' `
-          -X POST 'http://localhost:8080/api/v1/main/flows' `
-          -H 'Content-Type: application/x-yaml' `
-          --data-binary '@./kestra/flows/local_file_ingestion.yaml'
-        
-        curl.exe -v `
-          -u 'admin@kestra.io:Admin1234$' `
-          -X POST 'http://localhost:8080/api/v1/main/flows' `
-          -H 'Content-Type: application/x-yaml' `
-          --data-binary '@./kestra/flows/db_catalog_ingestion.yaml'
-        	
-        curl.exe -v `
-          -u 'admin@kestra.io:Admin1234$' `
-          -X POST 'http://localhost:8080/api/v1/main/flows' `
-          -H 'Content-Type: application/x-yaml' `
-          --data-binary '@./kestra/flows/rag_ingestion.yaml'
-        ```
-
-        *Option 2: Executing script using Powershell command*
-    
-        ```
-        curl-kestra-flows-powershell.cmd
-        ```
+        ./scripts/deploy_kestra_flows.sh
     
     - **Open Kestra UI**
 
@@ -477,18 +469,10 @@ Pre-requites:
       Press the Topology tab.    
 
       ![rag_ingestiom_trigger](assets/rag-ingestion-trigger.gif) 
+       
+---
 
-      *Note:*
-
-        Another way to create and execute kestra flow:
-        - Goto to the menu Flows --> +Create
-        - In other terminal, open the `kestra/flows/rag_ingestion.yaml` file using Notepad editor    
-        - Copy & paste the content into Kestra Flows Editor
-        - Save
-        - Execute
-        
-    
-## 10. Evaluation Targets (optional)
+## 10. Evaluation Targets
 
 Run with:
 
@@ -507,6 +491,8 @@ docker compose exec app python evaluation/evaluate.py
   (1-5 relevance score) — the better-scoring prompt is the one shipped in
   `rag/generation.py`
 - **Monitoring**: log queries, response time, and user feedback (👍/👎) from the UI
+
+---
 
 ## 11. Monitoring Dashboard
 
@@ -534,6 +520,8 @@ onto the same `'up'`/`'down'` values transparently:
 ![RAG-Monitoring](assets/RAG-monitoring-2.png)
 ![RAG-Monitoring](assets/RAG-monitoring-3.png)
 ![RAG-Monitoring](assets/RAG-monitoring-4.png)
+
+---
 
 ## 12. Cloud Deployment (GCP — live)
 
@@ -652,23 +640,24 @@ See: README-Cloud-Deployment.md
     terraform output
     ```
 
-#### Cloud Design Decisions
-See [Cloud Design Decision](infra/gcp/doc/cloud-design-decisions.md)
+    #### Cloud Design Decisions
+    See [Cloud Design Decision](infra/gcp/doc/cloud-design-decisions.md)
 
 
-#### Troubleshooting log
-Real issues hit (and fixed) getting this deployment working, in case you hit the same ones see [gcp-deployment-troubleshooting](infra/gcp/doc/gcp-deployment-troubleshooting.md).
+    #### Troubleshooting log
+    Real issues hit (and fixed) getting this deployment working, in case you hit the same ones see [gcp-deployment-troubleshooting](infra/gcp/doc/gcp-deployment-troubleshooting.md).
 
-#### Screenshoots
+    #### Screenshoots
 
-![DB Schema & Query Assistant](assets/Screenshot-GCP-1.png)
+    ![DB Schema & Query Assistant](assets/Screenshot-GCP-1.png)
+    
+    ![Monitoring Dashborad](assets/Screenshot-GCP-2.png)
+    
+    ![Resources](assets/Screenshot-GCP-3.png)
+    
+    ![Database](assets/Screenshot-GCP-4.png)
 
-![Monitoring Dashborad](assets/Screenshot-GCP-2.png)
-
-![Resources](assets/Screenshot-GCP-3.png)
-
-![Database](assets/Screenshot-GCP-4.png)
-
+---
 
 ## 13. Improvements
 
@@ -676,6 +665,7 @@ Other improvements:
 - Alerting on the monitoring dashboard (e.g. Slack ping when helpful rate drops below a threshold, or latency spikes)
 - Swap the Streamlit dashboard for Grafana if you need longer retention, alert rules, or multi-user access control
 
+---
 
 ## 14. Evaluation Criterias
 
@@ -703,6 +693,10 @@ maximized.
 | Cloud deployment | ✅ | Deployed and verified working on GCP (Cloud Run + Cloud SQL + Artifact Registry + Secret Manager) via Terraform — see [Cloud deployment](#12-cloud-deployment-gcp--live), including a troubleshooting log of every real issue hit along the way |
 | Extra bonus (up to 3) |✅ | Candidates worth flagging to reviewers: live-schema ingestion straight from `information_schema` (`db_catalog` source, no manual docs needed), a second full example schema (Healthcare Data Platform, 17 tables) with ER diagram + seed data, unified monitoring across two independently-built assistants, local-LLM support via Ollama with zero code changes |
 
+---
+
 ## 15. Acknowledgments
 
 • DataTalks.Club Community — for fostering a vibrant and collaborative learning environment in LLM Zoomcamp.
+
+---

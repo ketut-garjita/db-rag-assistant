@@ -43,35 +43,25 @@ services:
       args:
         EMBEDDING_MODEL: ${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
         RERANKER_MODEL: ${RERANKER_MODEL:-cross-encoder/ms-marco-MiniLM-L-6-v2}
-
     image: db-rag-assistant-app:latest
     container_name: db-rag-app
     volumes:
-      - ./evaluation:/app/evaluation
+      - .:/app
     restart: unless-stopped
-
     depends_on:
       db:
-        condition: service_healthy
-      ai_ollama:
-        condition: service_healthy
-
+        condition: service_healthy 
     env_file:
       - .env
-
     environment:
       # Inside Docker network, PostgreSQL is reached using service name.
       PG_HOST: db
-
     extra_hosts:
       - "host.docker.internal:host-gateway"
-
     networks:
       - zoomcamp_net
-
     ports:
       - "8501:8501"
-
     # IMPORTANT:
     # No ./data:/app/data
     # No .:/app
@@ -136,43 +126,6 @@ services:
 
     networks:
       - zoomcamp_net
-
-
-  # ============================================================
-  # Ollama
-  # ============================================================
-  ai_ollama:
-    image: ollama/ollama:latest
-    container_name: ai_ollama
-    restart: unless-stopped
-    tty: true
-
-    ports:
-      - "11434:11434"
-
-    networks:
-      - zoomcamp_net
-
-    volumes:
-      - ollama_data:/root/.ollama
-
-    environment:
-    #  OLLAMA_KEEP_ALIVE: 30m
-      OLLAMA_KEEP_ALIVE: "-1"
-      OLLAMA_MAX_LOADED_MODELS: 1
-      OLLAMA_NUM_PARALLEL: 1
-
-    healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-
-    # Opsi untuk mengunci memori jika diperlukan
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
 
 
   # ============================================================
@@ -308,9 +261,6 @@ networks:
 volumes:
   pgdata:
     name: pgdata
-
-  ollama_data:
-    name: ollama_data
 
   kestra_pgdata:
     name: kestra_pgdata
