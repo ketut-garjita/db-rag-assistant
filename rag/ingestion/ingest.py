@@ -144,6 +144,16 @@ def load_from_information_schema(dsn: str) -> list[tuple[str, str]]:
         )
         col_comments = {r[0]: r[1] for r in cur.fetchall()}
 
+        # Reindex the doc_chunks table
+        cur.execute(
+            """
+            REINDEX INDEX idx_doc_chunks_embedding_hnsw;
+            REINDEX INDEX idx_doc_chunks_content_tsv;
+            REINDEX INDEX idx_doc_chunks_source_file;
+            REINDEX INDEX idx_doc_chunks_table_name; 
+            """
+    )
+
         lines = [f"## Table: {table}"]
         if table_comment:
             lines.append(table_comment)

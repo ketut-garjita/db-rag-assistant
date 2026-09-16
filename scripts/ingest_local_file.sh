@@ -1,0 +1,1 @@
+docker exec db-rag-app python /app/rag/ingestion/ingest.py --source /app/data --source-type local_file
