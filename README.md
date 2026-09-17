@@ -19,7 +19,7 @@ Two assistants share one knowledge base and one monitoring stack:
 - [7. Choosing Models](#7-choosing-models)
 - [8. Retrieval](#8-retrieval)
 - [9. How to Run](#9-how-to-run)
-- [10. Evaluation Targets (optional)](#10-evaluation-targets-optional)
+- [10. Evaluation Targets](#10-evaluation-targets-optional)
 - [11. Monitoring Dashboard](#11-monitoring-dashboard)
 - [12. Cloud Deployment (GCP — live)](#12-cloud-deployment-gcp--live)
 - [13. Improvements](#13-improvements)
@@ -45,128 +45,332 @@ Source documents: DDL files (`CREATE TABLE ...`), a `schema_notes.md` file with 
 
 **ER Diagram & seed data (Healthcare Data Platform example)**
 
-Note: We can implement in any application databases.
+*Note: This solution can be implemented with any application database.*
+
 
 ![ER-Diagram](./assets/ER.png)
 
-- `db/schemas.sql` — full DDL for the Healthcare 17 tables including seed data, doc_chunks and query_logs tables
-- seed data — representative dummy data (166 rows across 17 tables: 10 patients, 12 encounters covering both outpatient and ER visits, insurance claims in approved/partial/rejected states, etc.).
+- `db/schemas.sql` — full DDL for the Healthcare seed data, doc_chunks and query_logs tables
+- seed data — representative dummy data covering both outpatient and ER visits, insurance claims in approved/partial/rejected states, etc.).
 
 ---
 
 ## 3. Architecture
 
+The system is designed as an evaluation-driven RAG and NL2SQL application with separate knowledge ingestion, AI inference, observability, and evaluation workflows.
+
 ```mermaid
-flowchart TD
-    A[DDL + Docs]
-    B[Chunking]
-    C[Embedding]
-    D["pgvector\n(PostgreSQL)"]
+flowchart TB
 
-    A --> B
-    B --> C
-    C --> D
+    subgraph INGEST["Knowledge Ingestion"]
+        DOCS["Local Documents<br/>Markdown / SQL / TXT"]
+        DB["Application PostgreSQL<br/>Information Schema"]
+        CHUNK["Chunking & Metadata"]
+        EMBED["Embedding Model"]
+        UPSERT["Incremental Upsert<br/>Hash-based Change Detection"]
 
-    U[User Question]
-    R[Hybrid Retrieval]
-    P[Prompt + Context]
-    L[LLM]
-    AN[Answer + Table Citations]
+        DOCS --> CHUNK
+        DB --> CHUNK
+        CHUNK --> EMBED
+        EMBED --> UPSERT
+    end
 
-    U --> R
-    D --> R
-    R --> P
-    P --> L
-    L --> AN
+    STORE["PostgreSQL + pgvector<br/>doc_chunks"]
+
+    UPSERT --> STORE
+
+    subgraph AI["AI / RAG Runtime"]
+        Q["User Question"]
+        RET["Semantic Retrieval<br/>+ optional Hybrid / Reranking"]
+        CTX["Context Assembly<br/>+ Prompt Construction"]
+        LLM["LLM"]
+        ANSWER["Grounded Answer<br/>+ Source Citations"]
+
+        Q --> RET
+        STORE --> RET
+        RET --> CTX
+        CTX --> LLM
+        LLM --> ANSWER
+    end
+
+    subgraph NL2SQL["Natural Language → SQL"]
+        NQ["Natural Language Question"]
+        SCHEMA["Schema Retrieval<br/>source_type = db_catalog"]
+        SQLGEN["LLM SQL Generation"]
+        VALIDATE["SQL Validation<br/>SELECT-only + LIMIT"]
+        EXEC["Read-only PostgreSQL<br/>Query Execution"]
+        RESULT["Query Result / DataFrame"]
+
+        NQ --> SCHEMA
+        STORE --> SCHEMA
+        SCHEMA --> SQLGEN
+        SQLGEN --> VALIDATE
+        VALIDATE --> EXEC
+        EXEC --> RESULT
+    end
+
+    subgraph APP["Application & Observability"]
+        UI["Streamlit UI"]
+        FEEDBACK["User Feedback"]
+        LOG["Query Logging<br/>query_logs"]
+        MON["Monitoring Dashboard"]
+
+        ANSWER --> UI
+        RESULT --> UI
+        UI --> FEEDBACK
+        UI --> LOG
+        FEEDBACK --> LOG
+        LOG --> MON
+    end
+
+    subgraph EVAL["Evaluation"]
+        DATASET["Evaluation Dataset"]
+        RETEVAL["Retrieval Evaluation<br/>Hit-rate + MRR"]
+        GENREVAL["Generation Evaluation<br/>LLM-as-Judge"]
+
+        DATASET --> RETEVAL
+        RETEVAL --> RET
+        DATASET --> GENREVAL
+        GENREVAL --> LLM
+    end
+
+    subgraph CLOUD["GCP Deployment"]
+        CR["Cloud Run<br/>Application"]
+        CRM["Cloud Run<br/>Monitoring"]
+        SQL["Cloud SQL<br/>PostgreSQL + pgvector"]
+        AR["Artifact Registry"]
+        SM["Secret Manager"]
+
+        CR --> SQL
+        CRM --> SQL
+        AR -.-> CR
+        SM -.-> CR
+    end
+
+    STORE -. production .-> SQL
+    UI -. deployed on .-> CR
+    MON -. deployed on .-> CRM
 ```
 
-- **Ingestion**: `rag/ingestion/ingest.py` — read documents, chunk, embed, load into pgvector
-- **Retrieval + Generation**: `rag/pipeline.py`
-- **Evaluation**: `evaluation/evaluate.py` — retrieval hit-rate & MRR, plus LLM-as-judge for answer quality
-- **UI**: `app/streamlit_app.py`
+### Core Components
+
+* **Knowledge Ingestion** — `rag/ingestion/ingest.py` supports local documents and live PostgreSQL catalog introspection, with chunking, embeddings, incremental upserts, and stale-chunk cleanup.
+* **RAG Pipeline** — `rag/pipeline.py` orchestrates retrieval, context construction, LLM generation, and source attribution.
+* **Retrieval** — `rag/retrieval.py` provides semantic retrieval with support for keyword/hybrid retrieval and reranking experiments.
+* **NL2SQL** — `rag/nl2sql.py` retrieves database schema context, generates SQL with the LLM, validates it as read-only SQL, executes it against PostgreSQL, and returns the result as a DataFrame.
+* **Observability** — `rag/monitoring/` records queries, response times, models, sources, and user feedback for the monitoring dashboard.
+* **Evaluation** — `evaluation/evaluate.py` measures retrieval quality using Hit-rate and MRR and supports LLM-as-a-judge evaluation for generated answers.
+* **UI** — `app/streamlit_app.py` provides the Schema Assistant and Natural Language → SQL interfaces.
+* **Cloud Deployment** — The application is containerized and deployed to Google Cloud Run, with PostgreSQL/pgvector hosted on Cloud SQL and container images stored in Artifact Registry.
+
 
 ---
 
 ## 4. Project Structure
 
+```text
+db-rag-assistant/
+├── app/
+│   └── streamlit_app.py
+│       # Streamlit UI for the DB Schema Assistant and
+│       # Natural Language → SQL interface, including
+│       # source citations and user feedback.
+│
+├── assets/
+│   # Application assets and supporting resources.
+│
+├── data/
+│   ├── add_column_comments.sql
+│   │   # SQL statements for adding documentation/comments
+│   │   # to database columns.
+│   ├── audit_enum_candidates.sql
+│   │   # SQL used to identify and audit candidate enum-like
+│   │   # values in the database.
+│   ├── eval_questions_categorized.json
+│   │   # Categorized evaluation questions used for retrieval
+│   │   # and answer-quality evaluation.
+│   ├── eval_questions.json
+│   │   # Evaluation question dataset.
+│   ├── schema_notes.md
+│   │   # Human-written database schema documentation and notes.
+│   ├── schemas_ddl.sql
+│   │   # Database DDL definitions used as source knowledge
+│   │   # for the RAG system.
+│   └── sql_eval_questions.json
+│       # Natural Language → SQL evaluation questions.
+│
+├── db/
+│   ├── doc_chunks_indexes.sql
+│   │   # Index definitions for the doc_chunks knowledge store,
+│   │   # including indexes used for retrieval.
+│   ├── doc_chunks.sql
+│   │   # Schema definition for the document/chunk knowledge store
+│   │   # containing document metadata and vector embeddings.
+│   ├── query_logs.sql
+│   │   # Schema definition for storing application queries,
+│   │   # generated answers/SQL, timing, model information,
+│   │   # sources, and user feedback.
+│   └── schema.sql
+│       # Main PostgreSQL schema initialization script for
+│       # the RAG application database.
+│
+├── docker-compose-with-ollama.yml
+│   # Docker Compose configuration for running the application
+│   # with a local Ollama LLM service.
+│
+├── docker-compose-without-ollama.yml
+│   # Docker Compose configuration for running the application
+│   # without the local Ollama service, suitable for external
+│   # OpenAI-compatible LLM providers.
+│
+├── docker-compose.yml
+│   # Main Docker Compose configuration for managing the
+│   # multi-container application stack.
+│
+├── Dockerfile
+│   # Instructions for building the main application container image.
+│
+├── Dockerfile.kestra
+│   # Dockerfile for the Kestra orchestration service.
+│
+├── docker-start.cmd
+│   # Windows command script for starting the Docker services.
+│
+├── docker-stop.cmd
+│   # Windows command script for stopping the Docker services.
+│
+├── evaluation/
+│   ├── eval_questions_categorized.json
+│   │   # Categorized retrieval/generation evaluation dataset.
+│   ├── eval_questions.json
+│   │   # Evaluation question dataset used by the evaluation suite.
+│   ├── evaluate.py
+│   │   # Evaluation suite for retrieval and generation quality,
+│   │   # including Hit-rate, MRR, and LLM-as-a-judge evaluation.
+│   ├── run-evaluate.sh
+│   │   # Shell script for running the evaluation workflow.
+│   └── sql_eval_questions.json
+│       # Evaluation dataset for the Natural Language → SQL workflow.
+│
+├── infra/
+│   └── gcp/
+│       ├── doc/
+│       │   ├── cloud-design-decisions.md
+│       │   │   # Documentation of key GCP architecture and
+│       │   │   # infrastructure design decisions.
+│       │   ├── gcp-deployment-troubleshooting.md
+│       │   │   # Troubleshooting notes and solutions for GCP deployment.
+│       │   ├── migrate-repo-windows-to-linux.md
+│       │   │   # Notes for migrating and synchronizing the project
+│       │   │   # development environment from Windows to Linux.
+│       │   └── stop-start-services.md
+│       │       # Operational notes for stopping and restarting
+│       │       # deployed GCP services.
+│       │
+│       ├── main.tf
+│       │   # Main Terraform configuration for provisioning
+│       │   # the GCP infrastructure.
+│       ├── outputs.tf
+│       │   # Terraform output definitions such as deployed
+│       │   # service URLs and infrastructure identifiers.
+│       ├── terraform.tfvars.example
+│       │   # Example Terraform variable values without
+│       │   # environment-specific secrets.
+│       ├── variables.tf
+│       │   # Terraform input variable definitions.
+│       └── versions.tf
+│           # Terraform and provider version constraints.
+│
+├── kestra/
+│   └── flows/
+│       ├── db_catalog_ingestion.yaml
+│       │   # Kestra flow for ingesting the PostgreSQL database
+│       │   # catalog/schema metadata into the RAG knowledge store.
+│       ├── local_file_ingestion.yaml
+│       │   # Kestra flow for ingesting local documentation files
+│       │   # into the RAG knowledge store.
+│       └── rag_ingestion.yaml
+│           # Combined Kestra flow for RAG ingestion from both
+│           # local files and database catalog sources.
+│
+├── notebooks/
+│   └── db_rag_assistant_progress_test.ipynb
+│       # Development and experimentation notebook used for
+│       # testing and tracking project progress.
+│
+├── rag/
+│   ├── config.py
+│   │   # Central configuration for database connections,
+│   │   # LLM, embedding model, and runtime settings.
+│   │
+│   ├── generation.py
+│   │   # Builds prompts from retrieved context and invokes
+│   │   # the configured LLM to generate grounded answers.
+│   │
+│   ├── ingestion/
+│   │   ├── db_rag_ingestion.yml
+│   │   │   # Configuration for the RAG ingestion workflow.
+│   │   └── ingest.py
+│   │       # Incremental ingestion pipeline: reads local documents
+│   │       # or database catalog metadata, chunks content, generates
+│   │       # embeddings, upserts changed chunks, and removes stale chunks.
+│   │
+│   ├── load_db_catalog.py
+│   │   # Loads PostgreSQL catalog/schema metadata into the
+│   │   # doc_chunks knowledge store.
+│   │
+│   ├── monitoring/
+│   │   ├── logger.py
+│   │   │   # Logging helpers for recording queries, answers,
+│   │   │   # SQL, sources, response time, model information,
+│   │   │   # and user feedback.
+│   │   └── monitoring_dashboard.py
+│   │       # Monitoring dashboard for query volume, latency,
+│   │       # model usage, and user feedback across assistants.
+│   │
+│   ├── nl2sql-cloud.py
+│   │   # Cloud/OpenAI-compatible implementation of the
+│   │   # Natural Language → SQL workflow.
+│   │
+│   ├── nl2sql-local.py
+│   │   # Local implementation of the Natural Language → SQL
+│   │   # workflow using an open-source/local LLM platform.
+│   │
+│   ├── nl2sql.py
+│   │   # Main Natural Language → SQL pipeline:
+│   │   # schema retrieval, LLM SQL generation, SQL guardrails,
+│   │   # read-only execution, result handling, and query logging.
+│   │
+│   ├── pipeline.py
+│   │   # End-to-end RAG orchestration from retrieval through
+│   │   # context construction and LLM generation.
+│   │
+│   └── retrieval/
+│       └── retrieval.py
+│           # Retrieval implementation supporting semantic search
+│           # and hybrid retrieval, with optional cross-encoder
+│           # re-ranking for retrieval experiments.
+│
+├── README-Cloud-Deployment.md
+│   # Documentation for deploying the application to GCP.
+│
+├── README.md
+│   # Main project documentation covering the architecture,
+│   # implementation, evaluation, usage, and deployment.
+│
+├── requirements.txt
+│   # Python dependencies required by the application,
+│   # RAG pipeline, evaluation, and supporting components.
+│
+└── scripts/
+    ├── deploy_kestra_flows.sh
+    │   # Deploys Kestra flow definitions.
+    ├── ingest_db_catalog.sh
+    │   # Runs database catalog/schema ingestion.
+    └── ingest_local_file.sh
+        # Runs local document ingestion.
 ```
-db-rag-assistant
-    |   .dockerignore
-    |   .env
-    |   .env.cloud
-    |   .env.example
-    |   .env.local
-    |   .gitignore
-    |   curl-kestra-flows-powershell.cmd              # Windows powershell code for copy flow files to kestra
-    |   curl-kestra-flows.cmd                         # Windows CMD code for copy flow files to kestra
-    |   curl-kestra-flows.sh                          # Linux Shell code for copy flow files to kestra
-    |   docker-compose.yml                            # Docker Compose simplifies the management of multi-container applications
-    |   docker-start.cmd                              # Windows CMD code for start docker containers
-    |   docker-stop.cmd                               # Windows CMD code for stop docker containers                                    
-    |   Dockerfile                                    # Instructions that Docker uses to build a container image automatically
-    |   Dockerfile.kestra                             # Dockerfile Kestra service
-    |   README.md                                     # Explains the project does
-    |   requirements.txt                              # List all the dependencies (packages and libraries) required for the project to function
-    |
-    +---app                                               
-    |       streamlit_app.py                          # DB Schema & Query Assistant UI
-    |
-    +---assets
-    |
-    +---data                                          # source documents (DDL, schema notes)
-    |       add_column_comments.sql
-    |       audit_enum_candidates.sql
-    |       schemas_ddl.sql
-    |       schema_notes.md
-    |
-    +---db                                            # dock_chunks, query_logs and vector store tables for the RAG app
-    |   |   doc_chunks.sql
-    |   |   query_logs.sql
-    |   |   schema.sql
-    |
-    +---evaluation
-    |       evaluate.py                               # Evaluation suite for both retrieval and generation.
-    |       eval_questions.json                       # json file example for evaluation
-    |
-    +---infra
-    |   /---gcp                                       # Setup for Cloud deployment using Infrastructure as Code of Terraform 
-    |       |   main.tf
-    |       |   outputs.tf
-    |       |   terraform.tfstate
-    |       |   terraform.tfvars
-    |       |   terraform.tfvars.example
-    |       |   variables.tf
-    |       |   versions.tf
-    |       |
-    +---kestra                                        # incremental-ingestion orchestration
-    |   /--flows
-     |          db_catalog_ingestion.yaml             # source-typpe=local_file
-    |           local_file_ingestion.yaml             # source-typpe=db_catalog          
-    |           rag_ingestion.yaml                    # source-typpe=local_file & db_catalog in one flow
-    |
-    +---notebooks                                          
-    |       db_rag_assistant_progress_test.ipynb      # notebook codes for testing
-    |
-    +---rag
-        |   config.py                                 # configuration file    
-        |   generation.py                             # build a prompt from retrieval results and call the LLM
-        |   load_db_catalog.py                        # loading source-type=db_catalog into doc_chunks table
-        |   nl2sql-cloud.py                           # nl2sql (Cloud OpenAI platform such as Grok)
-        |   nl2sql-local.py                           # nl2sql (Ollama platform open-source)
-        |   nl2sql.py                                 # Natural Language -> SQL: retrieval, guardrails, read-only execution
-        |   pipeline.py                               # End-to-end RAG pipeline: retrieval -> generation
-        |
-        +---ingestion
-        |       ingest.py                             # incremental chunking + embedding + pgvector/db_catalog load
-        |
-        +---monitoring                                          
-        |       logger.py                             # Logging helpers for the monitoring dashboard
-        |       monitoring_dashboard.py               # query volume, latency, and feedback across all assistants, read from query_logs
-        |
-        +---retrievalpipe
-                retrieval.py                          # hybrid search (semantic+keyword) plus a cross-encoder re-ranking stage on top of it
 
-```
 ---
 
 ## 5. Technology / Tools

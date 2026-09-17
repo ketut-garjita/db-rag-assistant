@@ -1,0 +1,466 @@
+[
+  {
+    "question": "What is the master table for patient identity?",
+    "expected_table": "patients"
+  },
+  {
+    "question": "Which table stores the Medical Record Number (MRN)?",
+    "expected_table": "patients"
+  },
+  {
+    "question": "Where are patient date of birth and gender stored?",
+    "expected_table": "patients"
+  },
+  {
+    "question": "Which table contains the patient registration timestamp?",
+    "expected_table": "patients"
+  },
+  {
+    "question": "What columns are used to identify a patient in the patients table?",
+    "expected_table": "patients"
+  },
+  {
+    "question": "Which table is the single source of patient identity across systems?",
+    "expected_table": "patients"
+  },
+  {
+    "question": "Which table stores hospital units such as Cardiology and Radiology?",
+    "expected_table": "departments"
+  },
+  {
+    "question": "Where is a department head recorded?",
+    "expected_table": "departments"
+  },
+  {
+    "question": "Which table contains department location information?",
+    "expected_table": "departments"
+  },
+  {
+    "question": "How are hospital departments represented?",
+    "expected_table": "departments"
+  },
+  {
+    "question": "Which table stores the relationship between a department and its head provider?",
+    "expected_table": "departments"
+  },
+  {
+    "question": "Where can I find department names and locations?",
+    "expected_table": "departments"
+  },
+  {
+    "question": "Which table stores doctors, nurses, and other clinical staff?",
+    "expected_table": "providers"
+  },
+  {
+    "question": "Where are provider specialties and license numbers stored?",
+    "expected_table": "providers"
+  },
+  {
+    "question": "Which table indicates whether a provider is still active?",
+    "expected_table": "providers"
+  },
+  {
+    "question": "How is a provider linked to a department?",
+    "expected_table": "providers"
+  },
+  {
+    "question": "Where is the medical practice license number recorded?",
+    "expected_table": "providers"
+  },
+  {
+    "question": "Which table contains clinical staff information?",
+    "expected_table": "providers"
+  },
+  {
+    "question": "Which table stores planned patient visits?",
+    "expected_table": "appointments"
+  },
+  {
+    "question": "Where is an appointment scheduled time recorded?",
+    "expected_table": "appointments"
+  },
+  {
+    "question": "Which table tracks appointment status such as confirmed, cancelled, or no_show?",
+    "expected_table": "appointments"
+  },
+  {
+    "question": "How are planned visits linked to patients and providers?",
+    "expected_table": "appointments"
+  },
+  {
+    "question": "Where is the reason for an appointment stored?",
+    "expected_table": "appointments"
+  },
+  {
+    "question": "Which table represents visits that are planned but not necessarily realized?",
+    "expected_table": "appointments"
+  },
+  {
+    "question": "Which table represents actual patient visits?",
+    "expected_table": "encounters"
+  },
+  {
+    "question": "What is the main clinical data hub for a realized visit?",
+    "expected_table": "encounters"
+  },
+  {
+    "question": "Where are outpatient, inpatient, and emergency encounter types stored?",
+    "expected_table": "encounters"
+  },
+  {
+    "question": "Which table records admitted_at and discharged_at?",
+    "expected_table": "encounters"
+  },
+  {
+    "question": "How can an encounter be linked back to an appointment?",
+    "expected_table": "encounters"
+  },
+  {
+    "question": "Which table stores walk-in or emergency visits without an appointment?",
+    "expected_table": "encounters"
+  },
+  {
+    "question": "Where are ICD-10 diagnoses recorded?",
+    "expected_table": "diagnoses"
+  },
+  {
+    "question": "Which table stores primary and secondary diagnoses for an encounter?",
+    "expected_table": "diagnoses"
+  },
+  {
+    "question": "How is the primary diagnosis identified?",
+    "expected_table": "diagnoses"
+  },
+  {
+    "question": "Which table contains icd10_code and diagnosis description?",
+    "expected_table": "diagnoses"
+  },
+  {
+    "question": "Where are diagnosis timestamps stored?",
+    "expected_table": "diagnoses"
+  },
+  {
+    "question": "Which table links diagnoses to clinical encounters?",
+    "expected_table": "diagnoses"
+  },
+  {
+    "question": "Where are CPT medical procedures recorded?",
+    "expected_table": "procedures"
+  },
+  {
+    "question": "Which table stores procedures performed during an encounter?",
+    "expected_table": "procedures"
+  },
+  {
+    "question": "Where is the provider who performed a procedure recorded?",
+    "expected_table": "procedures"
+  },
+  {
+    "question": "Which table contains cpt_code and procedure description?",
+    "expected_table": "procedures"
+  },
+  {
+    "question": "How are medical procedures linked to encounters?",
+    "expected_table": "procedures"
+  },
+  {
+    "question": "Where can I find the time a procedure was performed?",
+    "expected_table": "procedures"
+  },
+  {
+    "question": "Which table is the master medication catalog?",
+    "expected_table": "medications"
+  },
+  {
+    "question": "Where are medication names, generic names, forms, and strengths stored?",
+    "expected_table": "medications"
+  },
+  {
+    "question": "Which table indicates whether a medication is a controlled substance?",
+    "expected_table": "medications"
+  },
+  {
+    "question": "Where is the medication dosage form such as tablet or capsule defined?",
+    "expected_table": "medications"
+  },
+  {
+    "question": "Which table stores the medication reference data rather than patient prescriptions?",
+    "expected_table": "medications"
+  },
+  {
+    "question": "How are controlled substances identified in the database?",
+    "expected_table": "medications"
+  },
+  {
+    "question": "Which table stores prescriptions issued during encounters?",
+    "expected_table": "prescriptions"
+  },
+  {
+    "question": "Where are dosage, frequency, and duration of a prescription stored?",
+    "expected_table": "prescriptions"
+  },
+  {
+    "question": "How is a prescription linked to a medication?",
+    "expected_table": "prescriptions"
+  },
+  {
+    "question": "Which table records the provider who prescribed a medication?",
+    "expected_table": "prescriptions"
+  },
+  {
+    "question": "Where is the prescription date stored?",
+    "expected_table": "prescriptions"
+  },
+  {
+    "question": "Which table connects prescribed medications to encounters?",
+    "expected_table": "prescriptions"
+  },
+  {
+    "question": "Which table stores laboratory test orders?",
+    "expected_table": "lab_orders"
+  },
+  {
+    "question": "Where is the provider who ordered a lab test recorded?",
+    "expected_table": "lab_orders"
+  },
+  {
+    "question": "Which table tracks the status of a laboratory order?",
+    "expected_table": "lab_orders"
+  },
+  {
+    "question": "How are laboratory orders linked to encounters?",
+    "expected_table": "lab_orders"
+  },
+  {
+    "question": "Where is the ordered_at timestamp for lab tests stored?",
+    "expected_table": "lab_orders"
+  },
+  {
+    "question": "Which table represents the request for a laboratory test before results exist?",
+    "expected_table": "lab_orders"
+  },
+  {
+    "question": "Which table stores laboratory test results?",
+    "expected_table": "lab_results"
+  },
+  {
+    "question": "Where are result values and units for lab tests stored?",
+    "expected_table": "lab_results"
+  },
+  {
+    "question": "Which table indicates whether a lab result is abnormal?",
+    "expected_table": "lab_results"
+  },
+  {
+    "question": "How are lab results linked to a lab order?",
+    "expected_table": "lab_results"
+  },
+  {
+    "question": "Where is the time a laboratory result was recorded?",
+    "expected_table": "lab_results"
+  },
+  {
+    "question": "Which table can contain multiple results for one laboratory order?",
+    "expected_table": "lab_results"
+  },
+  {
+    "question": "Which table stores patient vital signs?",
+    "expected_table": "vitals"
+  },
+  {
+    "question": "Where are blood pressure, heart rate, temperature, and oxygen saturation recorded?",
+    "expected_table": "vitals"
+  },
+  {
+    "question": "Which table records vital signs for an encounter?",
+    "expected_table": "vitals"
+  },
+  {
+    "question": "Where is the time a vital sign measurement was recorded?",
+    "expected_table": "vitals"
+  },
+  {
+    "question": "Which table contains systolic and diastolic blood pressure?",
+    "expected_table": "vitals"
+  },
+  {
+    "question": "Where can I find patient weight and height measurements?",
+    "expected_table": "vitals"
+  },
+  {
+    "question": "Which table stores patient allergies?",
+    "expected_table": "allergies"
+  },
+  {
+    "question": "Where are allergy substances and reactions recorded?",
+    "expected_table": "allergies"
+  },
+  {
+    "question": "Which table records allergy severity?",
+    "expected_table": "allergies"
+  },
+  {
+    "question": "How are allergies linked to patients?",
+    "expected_table": "allergies"
+  },
+  {
+    "question": "Where is the date an allergy was recorded stored?",
+    "expected_table": "allergies"
+  },
+  {
+    "question": "Which table contains allergy reaction details?",
+    "expected_table": "allergies"
+  },
+  {
+    "question": "Which table stores patient immunization records?",
+    "expected_table": "immunizations"
+  },
+  {
+    "question": "Where are vaccine names and administration dates recorded?",
+    "expected_table": "immunizations"
+  },
+  {
+    "question": "Which table records the provider who administered an immunization?",
+    "expected_table": "immunizations"
+  },
+  {
+    "question": "How are immunizations linked to patients?",
+    "expected_table": "immunizations"
+  },
+  {
+    "question": "Where can I find vaccine lot numbers?",
+    "expected_table": "immunizations"
+  },
+  {
+    "question": "Which table stores dose numbers for vaccinations?",
+    "expected_table": "immunizations"
+  },
+  {
+    "question": "Which table stores patient insurance coverage policies?",
+    "expected_table": "insurance_policies"
+  },
+  {
+    "question": "Where are payer name and policy number stored?",
+    "expected_table": "insurance_policies"
+  },
+  {
+    "question": "Which table contains coverage type information?",
+    "expected_table": "insurance_policies"
+  },
+  {
+    "question": "How are insurance policies linked to patients?",
+    "expected_table": "insurance_policies"
+  },
+  {
+    "question": "Where are policy validity dates recorded?",
+    "expected_table": "insurance_policies"
+  },
+  {
+    "question": "Which table represents the insurance coverage available to a patient?",
+    "expected_table": "insurance_policies"
+  },
+  {
+    "question": "Which table stores insurance claims for encounters?",
+    "expected_table": "claims"
+  },
+  {
+    "question": "Where are claim amount and approved amount recorded?",
+    "expected_table": "claims"
+  },
+  {
+    "question": "Which table tracks claim status such as submitted, approved, rejected, or partial?",
+    "expected_table": "claims"
+  },
+  {
+    "question": "How is a claim linked to an insurance policy?",
+    "expected_table": "claims"
+  },
+  {
+    "question": "Which table connects a claim to an encounter?",
+    "expected_table": "claims"
+  },
+  {
+    "question": "Where is the claim submission timestamp stored?",
+    "expected_table": "claims"
+  },
+  {
+    "question": "Which table stores actual billing or payment transactions?",
+    "expected_table": "billing_transactions"
+  },
+  {
+    "question": "Where are payment amount and payment method recorded?",
+    "expected_table": "billing_transactions"
+  },
+  {
+    "question": "Which table tracks payments made by insurance, cash, card, or bank transfer?",
+    "expected_table": "billing_transactions"
+  },
+  {
+    "question": "How is a billing transaction linked to a claim?",
+    "expected_table": "billing_transactions"
+  },
+  {
+    "question": "Which table records the payment timestamp?",
+    "expected_table": "billing_transactions"
+  },
+  {
+    "question": "Where are out-of-pocket payments represented when there is no claim?",
+    "expected_table": "billing_transactions"
+  },
+  {
+    "question": "Which table should I use as the starting point when joining most clinical records?",
+    "expected_table": "encounters"
+  },
+  {
+    "question": "Which table links patients, providers, departments, and appointments for an actual visit?",
+    "expected_table": "encounters"
+  },
+  {
+    "question": "What table distinguishes a planned visit from an actual encounter?",
+    "expected_table": "appointments"
+  },
+  {
+    "question": "Which table should I query to find the primary diagnosis for each encounter?",
+    "expected_table": "diagnoses"
+  },
+  {
+    "question": "Which table should I use to find CPT procedures performed by a provider?",
+    "expected_table": "procedures"
+  },
+  {
+    "question": "Which table should I query to find medications prescribed during a clinical encounter?",
+    "expected_table": "prescriptions"
+  },
+  {
+    "question": "Which table should I use when I need the measured result rather than the lab order itself?",
+    "expected_table": "lab_results"
+  },
+  {
+    "question": "Which table should I query for the financial amount submitted to an insurer for an encounter?",
+    "expected_table": "claims"
+  },
+  {
+    "question": "Which table should I query for actual payments rather than submitted insurance claims?",
+    "expected_table": "billing_transactions"
+  },
+  {
+    "question": "What columns does the patients table have?",
+    "expected_table": "patients"
+  },
+  {
+    "question": "What columns does the encounters table have?",
+    "expected_table": "encounters"
+  },
+  {
+    "question": "What columns does the lab_results table have?",
+    "expected_table": "lab_results"
+  },
+  {
+    "question": "What columns does the insurance_policies table have?",
+    "expected_table": "insurance_policies"
+  },
+  {
+    "question": "What columns does the billing_transactions table have?",
+    "expected_table": "billing_transactions"
+  }
+]
