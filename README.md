@@ -501,7 +501,7 @@ The project is built with **PostgreSQL + pgvector** as the knowledge store and f
 
 ### PROJECT SCOPE
 
-[PROJECT SCOPE](./PROJECT_SCOPE.md)
+[PROJECT SCOPE](./PROJECT_SCOPE.md) 🚀
 
 ---
 
