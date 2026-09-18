@@ -100,6 +100,31 @@ flowchart TD
 | Terraform / GCP       | Defines and provisions the cloud infrastructure                                                    |
 
 ---
+## Technology / Tools
+
+| Technology / Tool                                         | Role in this project                                                                                                                                                                                                                                                           |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **PostgreSQL + pgvector**                                 | Core database and vector store. The same PostgreSQL instance stores document embeddings in `doc_chunks` and application/interaction telemetry in `query_logs`, avoiding the need for a separate vector database.                                                               |
+| **sentence-transformers** (`all-MiniLM-L6-v2`)            | Local embedding model used to convert documents, database schema information, and user questions into vector representations for semantic retrieval. The embedding model is also reused by the NL2SQL schema-retrieval path.                                                   |
+| **PostgreSQL Full-Text Search (`tsvector` / `ts_rank`)**  | Keyword-based retrieval mechanism implemented as part of the hybrid-search experiments. It complements semantic retrieval for exact or lexical matches.                                                                                                                        |
+| **Semantic / Hybrid Retrieval + Cross-Encoder Reranking** | Retrieval layer supporting semantic search, hybrid search, and optional cross-encoder reranking. These strategies were implemented and evaluated experimentally; semantic-only retrieval produced the strongest measured retrieval results for the current evaluation dataset. |
+| **LLM via OpenAI-Compatible API**                         | Used for answer generation in the DB Schema Assistant and SQL generation in NL2SQL. The provider and model are configurable through `OPENAI_BASE_URL` and `LLM_MODEL`, allowing the same application code to work with local or cloud-hosted LLM endpoints.                    |
+| **Ollama**                                                | Local LLM runtime used for development and local experimentation with open-source models through an OpenAI-compatible interface.                                                                                                                                               |
+| **Cloud LLM Provider**                                    | Cloud-based LLM execution is supported through the same OpenAI-compatible interface. The deployed NL2SQL implementation uses a configurable cloud model endpoint, allowing model changes without changing the application architecture.                                        |
+| **Streamlit**                                             | Application interface for the DB Schema Assistant, Natural Language → SQL assistant, and RAG Monitoring Dashboard. The application provides source information and user feedback for assistant responses.                                                                      |
+| **Docker + Docker Compose**                               | Containerization and local service orchestration for the application, PostgreSQL/pgvector, LLM runtime where required, Kestra, and supporting services. Multiple Compose configurations are provided for different local execution scenarios.                                  |
+| **Kestra**                                                | Workflow orchestration for incremental RAG ingestion. The flows support local-file ingestion, database-catalog ingestion, or combined RAG ingestion and can be triggered repeatedly without rebuilding the complete index.                                                     |
+| **psycopg2**                                              | PostgreSQL connectivity layer used across ingestion, vector retrieval, database-catalog introspection, NL2SQL execution, query logging, and monitoring.                                                                                                                        |
+| **pandas**                                                | Data processing layer used for NL2SQL query results, monitoring analytics, and evaluation workflows. NL2SQL returns query results as DataFrames, while the monitoring dashboard uses pandas to calculate query volume, latency, feedback, and pipeline timing metrics.         |
+| **Terraform**                                             | Infrastructure-as-Code used to provision and manage the GCP deployment rather than configuring cloud infrastructure manually.                                                                                                                                                  |
+| **Google Cloud Run**                                      | Serverless container platform used to deploy the application and monitoring services. The architecture supports scale-to-zero operation when the services are idle.                                                                                                            |
+| **Google Cloud SQL for PostgreSQL**                       | Managed PostgreSQL database used as the cloud database backend for the deployed application, including the RAG/vector data and application logging data.                                                                                                                       |
+| **Google Artifact Registry**                              | Stores the container image used to deploy the application to Cloud Run.                                                                                                                                                                                                        |
+| **Google Secret Manager**                                 | Stores deployment secrets and sensitive configuration separately from application source code.                                                                                                                                                                                 |
+| **Jupyter Notebook**                                      | Used during development and experimentation to test the RAG pipeline and document project progress before integrating functionality into the application.                                                                                                                      |
+| **Python**                                                | Primary implementation language for ingestion, retrieval, generation, NL2SQL, monitoring, evaluation, and supporting automation scripts.    
+
+---
 ## Engineering Focus
 
 The project emphasizes the complete AI application lifecycle rather than only LLM prompting:
@@ -123,82 +148,6 @@ Key engineering areas include:
 
 The system is designed as a **portfolio-grade LLM Engineering project**, with an emphasis on measurable retrieval quality, safety, observability, reproducibility, and operational considerations.
  
----
-## Key Capabilities
-
-### Knowledge Ingestion
-
-* Incremental ingestion rather than full index reconstruction.
-* Content-hash-based change detection.
-* Re-embedding only for new or modified chunks.
-* Upsert of changed content using PostgreSQL conflict handling.
-* Removal of stale chunks that no longer exist in the source.
-* Support for local text and Markdown-based documentation.
-* PostgreSQL database-catalog ingestion from live schema metadata.
-
-### Retrieval-Augmented Generation
-
-* Semantic retrieval using SentenceTransformers embeddings and pgvector.
-* Optional PostgreSQL full-text search.
-* Configurable hybrid retrieval using reciprocal rank fusion.
-* Optional cross-encoder reranking.
-* Exact table-name retrieval when a question explicitly identifies a table.
-* Source-aware context construction for schema and documentation questions.
-
-### Database Schema Assistant
-
-* Natural-language questions about tables, columns, data types, and relationships.
-* Retrieval over DDL, schema notes, comments, and database catalog metadata.
-* Answers grounded in indexed documentation.
-* Source context identifying the relevant table or document.
-
-### Natural Language → SQL
-
-* Natural-language questions converted into SQL.
-* Schema context retrieved from indexed `db_catalog` information.
-* Generation constrained to a single SQL statement.
-* Read-only SQL validation.
-* Automatic query limiting where applicable.
-* Execution through PostgreSQL.
-* Query results returned to the user.
-* Runtime query logging and feedback capture.
-
-### Evaluation
-
-* Retrieval evaluation using **Hit Rate** and **Mean Reciprocal Rank (MRR)**.
-* Comparison of semantic-only, keyword-only, hybrid, and hybrid-reranked retrieval.
-* Generation evaluation using an LLM-as-judge workflow.
-* Evaluation against project-specific questions rather than only synthetic examples.
-* Measurement-driven decisions about retrieval complexity and model configuration.
-
-### Monitoring and Observability
-
-* Query logging for both assistants.
-* Response-time tracking.
-* Retrieval and generation timing information.
-* Model and assistant identification.
-* User feedback through thumbs-up and thumbs-down controls.
-* Monitoring dashboard for usage, latency, and feedback trends.
-
-### Model Flexibility
-
-* Local model execution through Ollama.
-* Cloud model execution through the Groq OpenAI-compatible API.
-* Environment-based model switching.
-* Shared application logic across local and cloud execution modes.
-* Support for model experimentation using real project questions.
-
-### Orchestration and Deployment
-
-* Kestra workflows for local-file and database-catalog ingestion.
-* Manual, scheduled, and webhook-triggered ingestion workflows.
-* Docker Compose-based local development.
-* Terraform-based Google Cloud infrastructure.
-* Cloud Run services for the application and monitoring dashboard.
-* Cloud SQL PostgreSQL deployment.
-* Artifact Registry for container images.
-* Secret Manager and IAM integration for cloud configuration.
-
 ---
 ## Quick Start ⭐⭐⭐
 
@@ -473,3 +422,87 @@ The system turns database documentation and metadata into a searchable knowledge
 The project is built with **PostgreSQL + pgvector** as the knowledge store and follows the learning foundation of the **DataTalksClub LLM Zoomcamp**, while extending the coursework into a practical end-to-end AI application with retrieval evaluation, NL2SQL safety controls, monitoring, orchestration, and GCP deployment.
 
 ---
+## Key Capabilities
+
+### Knowledge Ingestion
+
+* Incremental ingestion rather than full index reconstruction.
+* Content-hash-based change detection.
+* Re-embedding only for new or modified chunks.
+* Upsert of changed content using PostgreSQL conflict handling.
+* Removal of stale chunks that no longer exist in the source.
+* Support for local text and Markdown-based documentation.
+* PostgreSQL database-catalog ingestion from live schema metadata.
+
+### Retrieval-Augmented Generation
+
+* Semantic retrieval using SentenceTransformers embeddings and pgvector.
+* Optional PostgreSQL full-text search.
+* Configurable hybrid retrieval using reciprocal rank fusion.
+* Optional cross-encoder reranking.
+* Exact table-name retrieval when a question explicitly identifies a table.
+* Source-aware context construction for schema and documentation questions.
+
+### Database Schema Assistant
+
+* Natural-language questions about tables, columns, data types, and relationships.
+* Retrieval over DDL, schema notes, comments, and database catalog metadata.
+* Answers grounded in indexed documentation.
+* Source context identifying the relevant table or document.
+
+### Natural Language → SQL
+
+* Natural-language questions converted into SQL.
+* Schema context retrieved from indexed `db_catalog` information.
+* Generation constrained to a single SQL statement.
+* Read-only SQL validation.
+* Automatic query limiting where applicable.
+* Execution through PostgreSQL.
+* Query results returned to the user.
+* Runtime query logging and feedback capture.
+
+### Evaluation
+
+* Retrieval evaluation using **Hit Rate** and **Mean Reciprocal Rank (MRR)**.
+* Comparison of semantic-only, keyword-only, hybrid, and hybrid-reranked retrieval.
+* Generation evaluation using an LLM-as-judge workflow.
+* Evaluation against project-specific questions rather than only synthetic examples.
+* Measurement-driven decisions about retrieval complexity and model configuration.
+
+### Monitoring and Observability
+
+* Query logging for both assistants.
+* Response-time tracking.
+* Retrieval and generation timing information.
+* Model and assistant identification.
+* User feedback through thumbs-up and thumbs-down controls.
+* Monitoring dashboard for usage, latency, and feedback trends.
+
+### Model Flexibility
+
+* Local model execution through Ollama.
+* Cloud model execution through the Groq OpenAI-compatible API.
+* Environment-based model switching.
+* Shared application logic across local and cloud execution modes.
+* Support for model experimentation using real project questions.
+
+### Orchestration and Deployment
+
+* Kestra workflows for local-file and database-catalog ingestion.
+* Manual, scheduled, and webhook-triggered ingestion workflows.
+* Docker Compose-based local development.
+* Terraform-based Google Cloud infrastructure.
+* Cloud Run services for the application and monitoring dashboard.
+* Cloud SQL PostgreSQL deployment.
+* Artifact Registry for container images.
+* Secret Manager and IAM integration for cloud configuration.
+
+---
+
+### PROJECT SCOPE
+
+[PROJECT SCOPE](./PROJECT_SCOPE.md)
+
+---
+
+
