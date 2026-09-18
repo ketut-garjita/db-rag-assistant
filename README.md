@@ -6,6 +6,7 @@ The system transforms database documentation and metadata into a searchable know
 
 The project uses **PostgreSQL + pgvector** as the knowledge store and follows the learning foundation of the **DataTalksClub LLM Zoomcamp**. It extends the course concepts into an end-to-end AI application covering ingestion, embeddings, retrieval, generation, NL2SQL safety controls, evaluation, monitoring, orchestration, and Google Cloud deployment.
 
+---
 ## Executive Summary
 
 Engineering and DBA teams frequently spend time searching for database knowledge distributed across DDL files, table and column comments, design notes, internal documentation, and individual experience.
@@ -43,6 +44,7 @@ Deployment
 
 The goal is not only to demonstrate a working RAG application, but also to explore the engineering considerations required to make an AI system measurable, repeatable, observable, and safer to operate.
 
+---
 ## Architecture Diagram
 
 The system separates source-data ingestion, searchable knowledge storage, assistant workflows, and runtime monitoring.
@@ -81,7 +83,7 @@ flowchart TD
     U --> F
 ```
 
-### Main Architectural Components
+**Main Architectural Components**
 
 | Component             | Responsibility                                                                                     |
 | --------------------- | -------------------------------------------------------------------------------------------------- |
@@ -97,6 +99,31 @@ flowchart TD
 | Kestra                | Orchestrates repeatable and scheduled ingestion workflows                                          |
 | Terraform / GCP       | Defines and provisions the cloud infrastructure                                                    |
 
+---
+## Engineering Focus
+
+The project emphasizes the complete AI application lifecycle rather than only LLM prompting:
+
+**Ingestion → Embedding → Retrieval → Generation → Validation → Execution → Evaluation → Monitoring → Deployment**
+
+Key engineering areas include:
+
+* Incremental document and database-catalog ingestion
+* Semantic retrieval using **SentenceTransformers + pgvector**
+* PostgreSQL full-text search and configurable hybrid retrieval
+* Optional cross-encoder reranking
+* Retrieval evaluation using **Hit Rate and MRR**
+* Schema-aware NL2SQL generation
+* Read-only SQL validation and automatic query limits
+* Query and user-feedback logging
+* Monitoring dashboards for latency, usage, and feedback
+* Kestra-based ingestion orchestration
+* Terraform-based deployment to **Google Cloud Platform**
+* Cloud Run, Cloud SQL, Artifact Registry, and Secret Manager integration
+
+The system is designed as a **portfolio-grade LLM Engineering project**, with an emphasis on measurable retrieval quality, safety, observability, reproducibility, and operational considerations.
+ 
+---
 ## Key Capabilities
 
 ### Knowledge Ingestion
@@ -173,7 +200,6 @@ flowchart TD
 * Secret Manager and IAM integration for cloud configuration.
 
 ---
-
 ## Quick Start ⭐⭐⭐
 
 This quick start launches the application locally and allows you to test both assistants.
@@ -194,7 +220,7 @@ Install:
 
 For the local-model option, Docker will also run the Ollama service.
 
-## 1. Clone the Repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/ketut-garjita/db-rag-assistant.git
@@ -296,6 +322,8 @@ Open the Streamlit application:
 
 **http://localhost:8501**
 
+ ![DB Schema & Query Assistant (RAG)](assets/streamlit-8501.png)
+ 
 The application provides two assistants.
 
 #### DB Schema Assistant
@@ -442,40 +470,7 @@ An evaluation-driven **Retrieval-Augmented Generation (RAG) system for database 
 
 The system turns database documentation and metadata into a searchable knowledge base, allowing users to ask questions about table schemas, column descriptions, relationships, and operational notes in natural language. It also provides a **Natural Language → SQL** workflow that retrieves relevant database schema context, generates a single SQL statement, validates it for read-only execution, and executes it against PostgreSQL.
 
-The project is built with **PostgreSQL + pgvector** as the knowledge store and follows the learning foundation of the **DataTalksClub LLM / AI Dev Tools Zoomcamp**, while extending the coursework into a practical end-to-end AI application with retrieval evaluation, NL2SQL safety controls, monitoring, orchestration, and GCP deployment.
-
-## Two Assistants, One Knowledge Base
-
-Both assistants use the same indexed knowledge base and share a common monitoring and evaluation architecture:
-
-* **DB Schema Assistant** — natural-language Q&A over indexed database schema and documentation.
-* **Natural Language → SQL** — converts natural-language questions into validated, read-only SQL queries and executes them against PostgreSQL.
-
-## Engineering Focus
-
-The project emphasizes the complete AI application lifecycle rather than only LLM prompting:
-
-**Ingestion → Embedding → Retrieval → Generation → Validation → Execution → Evaluation → Monitoring → Deployment**
-
-Key engineering areas include:
-
-* Incremental document and database-catalog ingestion
-* Semantic retrieval using **SentenceTransformers + pgvector**
-* PostgreSQL full-text search and configurable hybrid retrieval
-* Optional cross-encoder reranking
-* Retrieval evaluation using **Hit Rate and MRR**
-* Schema-aware NL2SQL generation
-* Read-only SQL validation and automatic query limits
-* Query and user-feedback logging
-* Monitoring dashboards for latency, usage, and feedback
-* Kestra-based ingestion orchestration
-* Terraform-based deployment to **Google Cloud Platform**
-* Cloud Run, Cloud SQL, Artifact Registry, and Secret Manager integration
-
-The system is designed as a **portfolio-grade AI/LLM engineering project**, with an emphasis on measurable retrieval quality, safety, observability, reproducibility, and operational considerations.
-
-
-  ![DB Schema & Query Assistant (RAG)](assets/streamlit-8501.png)
+The project is built with **PostgreSQL + pgvector** as the knowledge store and follows the learning foundation of the **DataTalksClub LLM Zoomcamp**, while extending the coursework into a practical end-to-end AI application with retrieval evaluation, NL2SQL safety controls, monitoring, orchestration, and GCP deployment.
 
  ## Table of Contents
 
@@ -497,7 +492,7 @@ The system is designed as a **portfolio-grade AI/LLM engineering project**, with
 
 ---
 
-# 1. Problem Statement
+## 1. Problem Statement
 
 Engineering and DBA teams often spend significant time searching for database schema information that is fragmented across DDL files, table and column comments, design notes, internal documentation, and tribal knowledge.
 
@@ -519,7 +514,6 @@ The system provides two complementary capabilities:
 2. **Natural Language → SQL** — uses retrieved database schema context to generate a single SQL query, validates it for read-only execution, and executes it against PostgreSQL.
 
 The objective is to reduce the effort required to discover database knowledge while keeping responses grounded in the indexed schema context and applying safety controls to generated SQL.
-
 
 ---
 
@@ -1019,8 +1013,7 @@ Task failures are surfaced in the Kestra UI, providing basic operational visibil
 The resulting knowledge base can therefore be refreshed repeatedly while minimizing unnecessary embedding work and keeping indexed documentation aligned with its source.
 
 ---
-
-# 7. Model Selection and Configuration
+## 7. Model Selection and Configuration
 
 The generation layer is implemented through the **OpenAI SDK interface**, allowing the application to use both local and cloud-hosted models through an OpenAI-compatible API.
 
@@ -1125,9 +1118,6 @@ This approach allows the same application image and codebase to switch between l
 The architecture deliberately separates **model/provider configuration from application behavior**, making model experimentation and deployment changes easier without modifying the core application logic.
 
 ---
-   
-## 8. Retrieval
-
 ## 8. Retrieval
 
 The retrieval layer is designed specifically for a relatively small database-schema and documentation corpus, with an emphasis on **accuracy, predictable behavior, and practical CPU performance**.
@@ -1343,7 +1333,7 @@ This reflects the actual engineering outcome of the project: **retrieval complex
 
 ---
 
-# 9. How to Run
+## 9. How to Run
 
 This section provides a complete local quick-start guide for running the project from a fresh clone.
 
@@ -1359,7 +1349,7 @@ Flow:
 Clone → Choose Model → Start → Ingest → Open UI → Ask Questions → Monitor → Optional Kestra
 ```
 
-## 9.1 Prerequisites
+### 9.1 Prerequisites
 
 Install the following before starting:
 
@@ -1378,9 +1368,9 @@ git clone https://github.com/ketut-garjita/db-rag-assistant.git
 cd db-rag-assistant
 ```
 
-## 9.2 Choose the LLM Mode
+### 9.2 Choose the LLM Mode
 
-### Option A — Cloud Model
+#### Option A — Cloud Model
 
 The cloud configuration uses the Groq OpenAI-compatible API.
 
@@ -1402,7 +1392,7 @@ LLM_MODEL=qwen/qwen3.8-27b
 
 Do not commit `.env` or any file containing API credentials to Git.
 
-### Option B — Local Model with Ollama
+#### Option B — Local Model with Ollama
 
 For a fully local setup:
 
@@ -1444,7 +1434,7 @@ OPENAI_BASE_URL=http://ai_ollama:11434/v1
 LLM_MODEL=gemma3:4b
 ```
 
-## 9.3 Start the Application
+### 9.3 Start the Application
 
 Build and start the selected Docker Compose configuration:
 
@@ -1464,7 +1454,7 @@ The Compose stack starts the application and its supporting services, including 
 
 If a service needs to be restarted, use the appropriate Docker Compose command. On Windows, the repository also provides `docker-start.cmd` as a convenience script.
 
-### First Database Initialization
+#### First Database Initialization
 
 On the first initialization of the PostgreSQL volume, the example Healthcare Data Platform schema is created together with the application's RAG and monitoring tables.
 
@@ -1476,11 +1466,11 @@ The application database includes:
 
 The exact initialization behavior depends on whether the PostgreSQL volume already exists. Existing volumes are not reinitialized automatically.
 
-## 9.4 Ingest the Knowledge Base
+### 9.4 Ingest the Knowledge Base
 
 The application should be populated before asking questions.
 
-### Local File Ingestion
+#### Local File Ingestion
 
 Run:
 
@@ -1493,7 +1483,7 @@ docker exec db-rag-app \
 
 ![ingest-local-file](assets/ingest-local-file.png)
 
-### Database Catalog Ingestion
+#### Database Catalog Ingestion
 
 Index the PostgreSQL database catalog:
 
@@ -1508,7 +1498,7 @@ docker exec db-rag-app \
 
 Both ingestion modes are incremental, so repeated execution does not require rebuilding unchanged embeddings.
 
-## 9.5 Open the Application
+### 9.5 Open the Application
 
 Open the Streamlit application:
 
@@ -1518,7 +1508,7 @@ Open the Streamlit application:
 
 The application provides two assistants.
 
-### DB Schema Assistant
+#### DB Schema Assistant
 
 Example questions:
 
@@ -1532,7 +1522,7 @@ What is the relationship between the patient and billing?
 
 Click **Ask** and review the answer and retrieved source context.
 
-### Natural Language → SQL
+#### Natural Language → SQL
 
 Example questions:
 
@@ -1550,17 +1540,17 @@ The NL2SQL workflow generates a SQL statement, validates it for read-only execut
 
 After each response, use the **👍 / 👎 feedback controls** to record whether the answer was helpful.
 
-## 9.6 Local and Cloud Model Examples
+### 9.6 Local and Cloud Model Examples
 
 The repository includes recordings showing the two execution modes.
 
-### Local Model
+#### Local Model
 
 ![DB Schema Q/A](assets/Recording-QA-LM.gif)
 
 ![Natural Language to SQL](assets/Recording-NL2SQL-LM.gif)
 
-### Cloud Model
+#### Cloud Model
 
 ![DB Schema Q/A](assets/Recording-QA-CM.gif)
 
@@ -1568,7 +1558,7 @@ The repository includes recordings showing the two execution modes.
 
 The application code and user workflow remain the same; only the model/provider configuration changes.
 
-## 9.7 Monitoring Dashboard
+### 9.7 Monitoring Dashboard
 
 The application records query execution and feedback information in `query_logs`.
 
@@ -1582,7 +1572,7 @@ The dashboard provides visibility into application usage, latency, assistant typ
 
 This allows model and application behavior to be reviewed using actual runtime data rather than relying only on manual testing.
 
-## 9.8 Optional — Kestra Ingestion Orchestration
+### 9.8 Optional — Kestra Ingestion Orchestration
 
 For repeated or scheduled ingestion, the repository provides Kestra workflows.
 
@@ -1607,7 +1597,7 @@ Password: Admin1234$
 
 ![Kestra Login](assets/kestra-login.png)
 
-### Execute the RAG Ingestion Flow
+#### Execute the RAG Ingestion Flow
 
 In the Kestra UI:
 
@@ -1622,7 +1612,7 @@ Flows
 
 The workflow orchestrates the configured ingestion tasks and reports their execution status in the Kestra UI.
 
-### Review the Execution
+#### Review the Execution
 
 Open the execution result and review the Gantt view:
 
@@ -1634,7 +1624,7 @@ A successful ingestion execution should report **SUCCESS** for the relevant task
 
 If the UI displays the documented non-blocking error shown above after a successful execution, it does not indicate that the ingestion tasks themselves failed.
 
-### Enable Scheduled Ingestion
+#### Enable Scheduled Ingestion
 
 The `rag_ingestion` flow can also be configured with its scheduled trigger.
 
@@ -1644,52 +1634,18 @@ Open the **Topology** tab and verify the scheduled trigger:
 
 The configured schedule allows the knowledge base to be refreshed automatically rather than requiring manual execution after every source change.
 
-## 9.9 Quick Verification Checklist
+### 9.9 Quick Verification Checklist
 
 After completing the setup, the following workflow should be available:
 
-```text id="k8q1vf"
-Docker Compose
-      │
-      ▼
-PostgreSQL + pgvector
-      │
-      ├── local_file ingestion
-      │
-      └── db_catalog ingestion
-              │
-              ▼
-          doc_chunks
-              │
-              ▼
-       ┌───────────────┐
-       │ Streamlit App │
-       └───────┬───────┘
-               │
-        ┌──────┴──────┐
-        ▼             ▼
-   Schema Q&A      NL → SQL
-        │             │
-        └──────┬──────┘
-               ▼
-          query_logs
-               │
-               ▼
-       Monitoring Dashboard
-
-Optional:
-       Kestra
-          │
-          ▼
-   Scheduled Ingestion
-```
+![Quick Verification Checklist](assets/Quick-Verification-Checklist.png)
 
 At this point, the repository should be fully runnable locally, with both assistants, the shared RAG knowledge base, monitoring, and optional Kestra-based ingestion orchestration available for experimentation.
 
 
 ---
 
-# 10. Evaluation
+### 10. Evaluation
 
 The project includes an evaluation framework to measure retrieval quality and validate the behavior of the RAG pipeline before and after engineering changes.
 
@@ -1701,7 +1657,7 @@ cd <repository-home>
 docker compose exec app python evaluation/evaluate.py
 ```
 
-## 10.1 Retrieval Evaluation
+### 10.1 Retrieval Evaluation
 
 Retrieval quality is evaluated using:
 
@@ -1736,7 +1692,7 @@ evaluation/
 └── evaluate.py
 ```
 
-## 10.2 Generation Evaluation
+### 10.2 Generation Evaluation
 
 The evaluation framework also contains support for generation evaluation using an **LLM-as-judge** approach.
 
@@ -1750,7 +1706,7 @@ rag/generation.py
 
 Generation evaluation is intentionally separated from retrieval evaluation so that retrieval quality and answer-generation quality can be investigated independently.
 
-## 10.3 NL2SQL Validation
+### 10.3 NL2SQL Validation
 
 The project also evaluates the database-query path through the NL2SQL assistant.
 
@@ -1776,7 +1732,7 @@ The SQL guardrails validate that generated queries are read-only, contain a sing
 
 This evaluation path is particularly important because retrieval quality alone does not guarantee that an NL2SQL question will produce a safe or executable database query.
 
-## 10.4 Monitoring and User Feedback
+### 10.4 Monitoring and User Feedback
 
 Evaluation is complemented by runtime monitoring.
 
@@ -1802,7 +1758,7 @@ rag/monitoring/
 
 The monitoring dashboard provides visibility into query volume, latency, model usage, and user feedback.
 
-## 10.5 Evaluation in the Cloud
+### 10.5 Evaluation in the Cloud
 
 The same application architecture can be deployed to GCP, with the application running on **Cloud Run** and PostgreSQL/pgvector hosted on **Cloud SQL**.
 
@@ -1839,7 +1795,7 @@ Deploy
 Monitor real usage
 ```
 
-### Key Engineering Takeaway
+### 10.6 Key Engineering Takeaway
 
 > **Measure retrieval quality before adding retrieval complexity.**
 
@@ -1850,7 +1806,7 @@ This approach keeps the RAG system **measurable, configurable, and practical for
 
 ---
 
-# 11. Monitoring Dashboard
+## 11. Monitoring Dashboard
 
 The project includes a dedicated Streamlit monitoring dashboard for observing application usage, latency, model behavior, and user feedback.
 
@@ -1873,7 +1829,7 @@ The monitoring layer records information such as:
 
 This provides a persistent operational record that can be analyzed independently from the main assistant UI.
 
-## 11.1 Unified Monitoring
+### 11.1 Unified Monitoring
 
 The same `query_logs` table is shared by both assistants:
 
@@ -1893,7 +1849,7 @@ This means the two assistant workflows can be monitored from a single dashboard 
 
 The NL2SQL implementation logs its interactions to the same monitoring table, allowing its usage and performance to be analyzed alongside the DB Schema Assistant.
 
-## 11.2 Dashboard Metrics
+### 11.2 Dashboard Metrics
 
 The monitoring dashboard is implemented in:
 
@@ -1909,7 +1865,7 @@ It provides top-level operational metrics such as:
 
 It also provides a recent-query table for inspecting application activity.
 
-## 11.3 Monitoring Visualizations
+### 11.3 Monitoring Visualizations
 
 The dashboard renders five main visualizations:
 
@@ -1930,7 +1886,7 @@ NL2SQL
 
 rather than treating the entire application as a single workload.
 
-## 11.4 User Feedback
+### 11.4 User Feedback
 
 The Streamlit application provides 👍 / 👎 feedback for assistant responses.
 
@@ -1947,7 +1903,7 @@ The monitoring dashboard can then aggregate this feedback into a single feedback
 
 The feedback mechanism therefore provides a simple human-in-the-loop signal that complements the offline evaluation described in [Chapter 10](#10-evaluation).
 
-## 11.5 Monitoring Architecture
+### 11.5 Monitoring Architecture
 
 The monitoring flow is intentionally simple:
 
@@ -1956,7 +1912,7 @@ The monitoring flow is intentionally simple:
 
 This design avoids introducing a separate observability database for the project's current scale while still providing persistent operational data.
 
-## 11.6 Monitoring in the GCP Deployment
+### 11.6 Monitoring in the GCP Deployment
 
 In the GCP deployment, the application and monitoring components can run as separate Cloud Run services while using the PostgreSQL/pgvector database hosted on Cloud SQL.
 
@@ -1966,7 +1922,7 @@ The resulting architecture separates the user-facing application from the monito
 
 This preserves the same monitoring model used during local development while allowing the dashboard to observe the deployed application environment.
 
-## 11.7 Operational Feedback Loop
+### 11.7 Operational Feedback Loop
 
 Monitoring complements the offline evaluation framework:
 
@@ -1975,8 +1931,7 @@ Monitoring complements the offline evaluation framework:
 
 The combination of **offline evaluation + runtime monitoring + user feedback** provides a practical feedback loop for improving the RAG and NL2SQL system based on measured behavior rather than assumptions.
 
-
-### Dashboard Examples
+### 11.8 Dashboard Examples
 
 ![RAG-Monitoring](assets/RAG-monitoring-1a.png)
 ![RAG-Monitoring](assets/RAG-monitoring-2.png)
@@ -1984,7 +1939,7 @@ The combination of **offline evaluation + runtime monitoring + user feedback** p
 ![RAG-Monitoring](assets/RAG-monitoring-4.png)
 
 ---
-# 12. Cloud Deployment (GCP)
+## 12. Cloud Deployment (GCP)
 
 The application was deployed to **Google Cloud Platform (GCP)** using **Terraform Infrastructure as Code (IaC)**.
 
@@ -2006,43 +1961,17 @@ infra/gcp/
     └── stop-start-services.md
 ```
 
-## 12.1 GCP Architecture
+### 12.1 GCP Architecture
 
 The deployed architecture consists of:
 
-```text
-                         Google Cloud
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│  Artifact Registry                                      │
-│       │                                                 │
-│       │ container image                                 │
-│       ▼                                                 │
-│  Cloud Run                                              │
-│  ├── db-rag-app                                         │
-│  │       │                                              │
-│  │       └──────────────┐                               │
-│  │                      │                               │
-│  └── db-rag-monitoring  │                               │
-│                         │                               │
-│                         ▼                               │
-│                  Cloud SQL PostgreSQL                   │
-│                       + pgvector                        │
-│                         │                               │
-│              ┌──────────┴──────────┐                    │
-│              │                     │                    │
-│         doc_chunks              query_logs              │
-│                                                         │
-│  Secret Manager → application secrets                   │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
+![GCP Architecture](assets/GCP-Architecture.png)
 
 The main application and monitoring dashboard are deployed as separate Cloud Run services, while PostgreSQL with pgvector is hosted on Cloud SQL.
 
 The project therefore keeps the application layer stateless and places persistent RAG and monitoring data in PostgreSQL.
 
-## 12.2 Infrastructure as Code
+### 12.2 Infrastructure as Code
 
 Terraform is used to provision and manage the GCP resources.
 
@@ -2061,7 +1990,7 @@ Using Terraform provides a reproducible infrastructure definition and keeps the 
 
 The deployment state is intentionally retained so that resources can be stopped, restarted, or recreated without losing the infrastructure definition.
 
-## 12.3 Authentication and Initial Setup
+### 12.3 Authentication and Initial Setup
 
 Two Google authentication contexts are used during deployment:
 
@@ -2087,7 +2016,7 @@ cp terraform.tfvars.example terraform.tfvars
 
 The real `terraform.tfvars` contains environment-specific values and must never be committed to Git.
 
-## 12.4 Artifact Registry
+### 12.4 Artifact Registry
 
 The container image is stored in Google Artifact Registry.
 
@@ -2133,7 +2062,7 @@ db-rag-assistant/
 app:latest
 ```
 
-## 12.5 Cloud LLM Configuration
+### 12.5 Cloud LLM Configuration
 
 The application uses an OpenAI-compatible interface, allowing the LLM provider to be configured independently of the application code.
 
@@ -2153,7 +2082,7 @@ This separation allows the same application container to support different OpenA
 
 The deployed NL2SQL implementation uses the configured LLM to generate SQL from retrieved database-schema context. The generated query is then validated and executed through a read-only PostgreSQL connection.
 
-## 12.6 Provision Cloud SQL and Cloud Run
+### 12.6 Provision Cloud SQL and Cloud Run
 
 Once the Artifact Registry image exists and the Terraform variables are configured:
 
@@ -2179,7 +2108,7 @@ Terraform outputs provide the resulting application and monitoring endpoints:
 terraform output
 ```
 
-## 12.7 Initialize the Cloud SQL Database
+### 12.7 Initialize the Cloud SQL Database
 
 Terraform provisions the Cloud SQL instance, but database initialization is handled separately.
 
@@ -2197,7 +2126,7 @@ Then initialize the database schema:
 
 This creates the application database structures, including the RAG and monitoring tables.
 
-## 12.8 Populate the RAG Knowledge Base
+### 12.8 Populate the RAG Knowledge Base
 
 Cloud Run does not provide the equivalent of:
 
@@ -2221,7 +2150,7 @@ Port `5433` is intentionally used locally so that the proxy does not conflict wi
 
 The application image can then be used to run the same ingestion code against Cloud SQL.
 
-### Local document ingestion
+#### Local document ingestion
 
 ```bash
 docker run --rm \
@@ -2239,7 +2168,7 @@ docker run --rm \
   --source-type local_file
 ```
 
-### Database catalog ingestion
+#### Database catalog ingestion
 
 ```bash
 docker run --rm \
@@ -2263,26 +2192,7 @@ The ingestion process is incremental: changed chunks are embedded and upserted, 
 
 The deployed architecture supports both major application workflows:
 
-```text
-                    Cloud Run
-                       │
-          ┌────────────┴────────────┐
-          │                         │
-   DB Schema Assistant          NL2SQL
-          │                         │
-          │                  schema retrieval
-          │                         │
-          └────────────┬────────────┘
-                       │
-                       ▼
-              Cloud SQL PostgreSQL
-                       │
-                 + pgvector
-                       │
-             ┌─────────┴─────────┐
-             │                   │
-        doc_chunks           query_logs
-```
+![Cloud Deployment](assets/Cloud-Deployment.png)
 
 The NL2SQL workflow retrieves only `db_catalog` schema context from `doc_chunks`, generates a single SQL statement, validates it, and executes it using a read-only database transaction.
 
@@ -2294,25 +2204,7 @@ Because this project is primarily a learning and portfolio deployment, the GCP i
 
 The operational model is:
 
-```text
-Cloud Run services
-    → scale to zero when idle
-
-Cloud Run Jobs
-    → no active executions when not required
-
-Cloud SQL
-    → STOPPED when not actively testing
-
-Artifact Registry
-    → retain container images
-
-Secret Manager
-    → retain configuration secrets
-
-Terraform state
-    → retain infrastructure state
-```
+![Operational Cost Management](assets/Operational-Cost-Management.png)
 
 This makes it possible to stop the active compute resources without destroying the complete infrastructure definition.
 
@@ -2324,7 +2216,7 @@ Detailed operational procedures are documented in:
 infra/gcp/doc/stop-start-services.md
 ```
 
-## 12.11 Deployment Troubleshooting
+### 12.11 Deployment Troubleshooting
 
 The deployment process also served as an engineering exercise rather than simply a one-command deployment.
 
@@ -2347,7 +2239,7 @@ infra/gcp/doc/gcp-deployment-troubleshooting.md
 
 This documentation is intentionally retained as part of the portfolio because it records actual deployment decisions and failure/recovery paths rather than presenting the deployment as a purely theoretical architecture.
 
-## 12.12 Deployment Validation
+### 12.12 Deployment Validation
 
 After deployment, the service endpoints can be retrieved with:
 
@@ -2393,7 +2285,7 @@ Read-only PostgreSQL execution
 Result + monitoring log
 ```
 
-## 12.13 Cloud Deployment Design Principle
+### 12.13 Cloud Deployment Design Principle
 
 The GCP deployment demonstrates that the project is not limited to a local Docker environment.
 
@@ -2422,7 +2314,7 @@ GCP
 
 while keeping the RAG, NL2SQL, evaluation, and monitoring components largely unchanged.
 
-### Key Engineering Takeaway
+### 12.14 Key Engineering Takeaway
 
 > **Separate application logic from infrastructure, and make the infrastructure reproducible.**
 
@@ -2430,458 +2322,7 @@ Terraform provides the infrastructure definition, Artifact Registry provides imm
 
 The result is a portfolio deployment that demonstrates not only RAG and LLM application development, but also **containerization, Infrastructure as Code, cloud database integration, secure configuration, operational troubleshooting, and cost-aware cloud management**.
 
-# 12. Cloud Deployment (GCP)
-
-The application was deployed to **Google Cloud Platform (GCP)** using **Terraform Infrastructure as Code (IaC)**.
-
-The cloud deployment separates the application, monitoring dashboard, database, secrets, and container image infrastructure while preserving the same RAG/NL2SQL architecture used during local development.
-
-The infrastructure configuration is located under:
-
-```text
-infra/gcp/
-├── main.tf
-├── outputs.tf
-├── variables.tf
-├── versions.tf
-├── terraform.tfvars.example
-└── doc/
-    ├── cloud-design-decisions.md
-    ├── gcp-deployment-troubleshooting.md
-    ├── migrate-repo-windows-to-linux.md
-    └── stop-start-services.md
-```
-
-## 12.1 GCP Architecture
-
-The deployed architecture consists of:
-
-```text
-                         Google Cloud
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│  Artifact Registry                                      │
-│       │                                                 │
-│       │ container image                                 │
-│       ▼                                                 │
-│  Cloud Run                                               │
-│  ├── db-rag-app                                          │
-│  │       │                                               │
-│  │       └──────────────┐                                │
-│  │                      │                                │
-│  └── db-rag-monitoring  │                                │
-│                         │                                │
-│                         ▼                                │
-│                  Cloud SQL PostgreSQL                    │
-│                       + pgvector                          │
-│                         │                                │
-│              ┌──────────┴──────────┐                     │
-│              │                     │                     │
-│         doc_chunks              query_logs               │
-│                                                         │
-│  Secret Manager → application secrets                   │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
-
-The main application and monitoring dashboard are deployed as separate Cloud Run services, while PostgreSQL with pgvector is hosted on Cloud SQL.
-
-The project therefore keeps the application layer stateless and places persistent RAG and monitoring data in PostgreSQL.
-
-## 12.2 Infrastructure as Code
-
-Terraform is used to provision and manage the GCP resources.
-
-The deployment includes infrastructure for:
-
-* Google Cloud APIs required by the application
-* Artifact Registry
-* Cloud Run application service
-* Cloud Run monitoring service
-* Cloud SQL PostgreSQL
-* Secret Manager
-* IAM permissions
-* supporting cloud configuration
-
-Using Terraform provides a reproducible infrastructure definition and keeps the cloud environment separate from application source code.
-
-The deployment state is intentionally retained so that resources can be stopped, restarted, or recreated without losing the infrastructure definition.
-
-## 12.3 Authentication and Initial Setup
-
-Two Google authentication contexts are used during deployment:
-
-```bash
-gcloud auth login
-
-gcloud auth application-default login
-
-gcloud config set project <project_id>
-```
-
-The first authentication is used by the Google Cloud CLI and related container/image operations.
-
-Application Default Credentials are used by Terraform's Google provider.
-
-Create the Terraform variables file from the example:
-
-```bash
-cd infra/gcp
-
-cp terraform.tfvars.example terraform.tfvars
-```
-
-The real `terraform.tfvars` contains environment-specific values and must never be committed to Git.
-
-## 12.4 Artifact Registry
-
-The container image is stored in Google Artifact Registry.
-
-Create the repository before pushing the application image:
-
-```bash
-terraform init
-
-terraform apply \
-  -target=google_artifact_registry_repository.repo
-```
-
-Configure Docker authentication:
-
-```bash
-gcloud auth configure-docker <region>-docker.pkg.dev
-```
-
-Build and push the application image from the repository root:
-
-```bash
-docker build \
-  -t <region>-docker.pkg.dev/<project_id>/db-rag-assistant/app:latest .
-
-docker push \
-  <region>-docker.pkg.dev/<project_id>/db-rag-assistant/app:latest
-```
-
-The same image URI must then be specified as `app_image_tag` in `terraform.tfvars`.
-
-For the deployed project, the Artifact Registry location is:
-
-```text
-asia-southeast2
-```
-
-and the image follows the structure:
-
-```text
-asia-southeast2-docker.pkg.dev/
-<project_id>/
-db-rag-assistant/
-app:latest
-```
-
-## 12.5 Cloud LLM Configuration
-
-The application uses an OpenAI-compatible interface, allowing the LLM provider to be configured independently of the application code.
-
-For example, when using a provider such as Groq:
-
-```text
-OPENAI_BASE_URL=https://api.groq.com/openai/v1
-```
-
-The corresponding model is configured through:
-
-```text
-LLM_MODEL=<model>
-```
-
-This separation allows the same application container to support different OpenAI-compatible providers without changing the RAG application architecture.
-
-The deployed NL2SQL implementation uses the configured LLM to generate SQL from retrieved database-schema context. The generated query is then validated and executed through a read-only PostgreSQL connection.
-
-## 12.6 Provision Cloud SQL and Cloud Run
-
-Once the Artifact Registry image exists and the Terraform variables are configured:
-
-```bash
-cd infra/gcp
-
-terraform apply
-```
-
-Terraform provisions the remaining cloud resources, including:
-
-```text
-Cloud SQL
-Secret Manager
-IAM
-Cloud Run — db-rag-app
-Cloud Run — db-rag-monitoring
-```
-
-Terraform outputs provide the resulting application and monitoring endpoints:
-
-```bash
-terraform output
-```
-
-## 12.7 Initialize the Cloud SQL Database
-
-Terraform provisions the Cloud SQL instance, but database initialization is handled separately.
-
-Connect to PostgreSQL:
-
-```bash
-gcloud sql connect db-rag-postgres --user=postgres
-```
-
-Then initialize the database schema:
-
-```sql
-\i db/schema.sql
-```
-
-This creates the application database structures, including the RAG and monitoring tables.
-
-## 12.8 Populate the RAG Knowledge Base
-
-Cloud Run does not provide the equivalent of:
-
-```bash
-docker exec ...
-```
-
-used during local development.
-
-Therefore, the deployed Cloud SQL database can be populated using the **Cloud SQL Auth Proxy** from the development environment.
-
-Start the proxy:
-
-```bash
-cloud-sql-proxy \
-  <project_id>:<region>:db-rag-postgres \
-  --port 5433
-```
-
-Port `5433` is intentionally used locally so that the proxy does not conflict with another PostgreSQL service listening on the default local port `5432`.
-
-The application image can then be used to run the same ingestion code against Cloud SQL.
-
-### Local document ingestion
-
-```bash
-docker run --rm \
-  -e PG_HOST=host.docker.internal \
-  -e PG_PORT=5433 \
-  -e PG_DB=postgres \
-  -e PG_USER=postgres \
-  -e PG_PASSWORD=<db_password> \
-  -e OPENAI_API_KEY=<key> \
-  -e OPENAI_BASE_URL=<base_url> \
-  -e LLM_MODEL=<model> \
-  <region>-docker.pkg.dev/<project_id>/db-rag-assistant/app:latest \
-  python /app/rag/ingestion/ingest.py \
-  --source /app/data \
-  --source-type local_file
-```
-
-### Database catalog ingestion
-
-```bash
-docker run --rm \
-  -e PG_HOST=host.docker.internal \
-  -e PG_PORT=5433 \
-  -e PG_DB=postgres \
-  -e PG_USER=postgres \
-  -e PG_PASSWORD=<db_password> \
-  -e OPENAI_API_KEY=<key> \
-  -e OPENAI_BASE_URL=<base_url> \
-  -e LLM_MODEL=<model> \
-  <region>-docker.pkg.dev/<project_id>/db-rag-assistant/app:latest \
-  python /app/rag/ingestion/ingest.py \
-  --source "host=host.docker.internal port=5433 dbname=postgres user=postgres password=<db_password>" \
-  --source-type db_catalog
-```
-
-The ingestion process is incremental: changed chunks are embedded and upserted, while stale chunks can be removed. This allows the same ingestion mechanism to be reused when the documentation or database schema changes.
-
-## 12.9 Cloud Deployment of the RAG and NL2SQL Workloads
-
-The deployed architecture supports both major application workflows:
-
-```text
-                    Cloud Run
-                       │
-          ┌────────────┴────────────┐
-          │                         │
-   DB Schema Assistant          NL2SQL
-          │                         │
-          │                  schema retrieval
-          │                         │
-          └────────────┬────────────┘
-                       │
-                       ▼
-              Cloud SQL PostgreSQL
-                       │
-                 + pgvector
-                       │
-             ┌─────────┴─────────┐
-             │                   │
-        doc_chunks           query_logs
-```
-
-The NL2SQL workflow retrieves only `db_catalog` schema context from `doc_chunks`, generates a single SQL statement, validates it, and executes it using a read-only database transaction.
-
-This means the cloud deployment preserves the same safety and retrieval boundaries established during local development.
-
-## 12.10 Operational Cost Management
-
-Because this project is primarily a learning and portfolio deployment, the GCP infrastructure is configured with cost awareness.
-
-The operational model is:
-
-```text
-Cloud Run services
-    → scale to zero when idle
-
-Cloud Run Jobs
-    → no active executions when not required
-
-Cloud SQL
-    → STOPPED when not actively testing
-
-Artifact Registry
-    → retain container images
-
-Secret Manager
-    → retain configuration secrets
-
-Terraform state
-    → retain infrastructure state
-```
-
-This makes it possible to stop the active compute resources without destroying the complete infrastructure definition.
-
-When the project needs to be demonstrated again, the required services can be restarted and the deployment can be reused.
-
-Detailed operational procedures are documented in:
-
-```text
-infra/gcp/doc/stop-start-services.md
-```
-
-## 12.11 Deployment Troubleshooting
-
-The deployment process also served as an engineering exercise rather than simply a one-command deployment.
-
-Several practical issues were encountered during the migration from local development to GCP, including:
-
-* existing GCP resources and Terraform state reconciliation
-* Artifact Registry image management
-* Cloud SQL connectivity
-* Cloud SQL Auth Proxy usage
-* local port conflicts
-* authentication differences between `gcloud` and Terraform
-* container execution against the remote database
-* Cloud Run deployment behavior
-
-The repository keeps these lessons in:
-
-```text
-infra/gcp/doc/gcp-deployment-troubleshooting.md
-```
-
-This documentation is intentionally retained as part of the portfolio because it records actual deployment decisions and failure/recovery paths rather than presenting the deployment as a purely theoretical architecture.
-
-## 12.12 Deployment Validation
-
-After deployment, the service endpoints can be retrieved with:
-
-```bash
-terraform output
-```
-
-The resulting endpoints include:
-
-```text
-Application URL
-Monitoring URL
-Cloud SQL connection name
-```
-
-The deployment can then be validated through the same application workflows used locally:
-
-```text
-DB Schema Assistant
-        ↓
-Cloud Run
-        ↓
-Cloud SQL + pgvector
-        ↓
-RAG retrieval
-        ↓
-LLM generation
-```
-
-and:
-
-```text
-NL2SQL Assistant
-        ↓
-Schema retrieval
-        ↓
-LLM SQL generation
-        ↓
-SQL guardrails
-        ↓
-Read-only PostgreSQL execution
-        ↓
-Result + monitoring log
-```
-
-## 12.13 Cloud Deployment Design Principle
-
-The GCP deployment demonstrates that the project is not limited to a local Docker environment.
-
-The same core architecture can be moved from:
-
-```text
-Local Docker Compose
-        ↓
-PostgreSQL + pgvector
-        ↓
-Streamlit
-        ↓
-LLM provider
-```
-
-to:
-
-```text
-GCP
-├── Cloud Run
-├── Cloud SQL + pgvector
-├── Artifact Registry
-├── Secret Manager
-└── Terraform IaC
-```
-
-while keeping the RAG, NL2SQL, evaluation, and monitoring components largely unchanged.
-
-### Key Engineering Takeaway
-
-> **Separate application logic from infrastructure, and make the infrastructure reproducible.**
-
-Terraform provides the infrastructure definition, Artifact Registry provides immutable deployment artifacts, Cloud Run provides the application runtime, Cloud SQL provides persistent PostgreSQL/pgvector storage, and Secret Manager keeps sensitive configuration outside the application source code.
-
-The result is a portfolio deployment that demonstrates not only RAG and LLM application development, but also **containerization, Infrastructure as Code, cloud database integration, secure configuration, operational troubleshooting, and cost-aware cloud management**.
-
-
-### Troubleshooting log
-    Real issues hit (and fixed) getting this deployment working, in case you hit the same ones see [gcp-deployment-troubleshooting](infra/gcp/doc/gcp-deployment-troubleshooting.md).
-
-
-### Screenshoots
+### 12.15 Screenshoots
 
 ![DB Schema & Query Assistant](assets/Screenshot-GCP-1.png)
 
@@ -2893,13 +2334,13 @@ The result is a portfolio deployment that demonstrates not only RAG and LLM appl
 
 ---
 
-# 13. Improvements
+## 13. Improvements
 
 The current implementation provides an end-to-end RAG and NL2SQL system with retrieval evaluation, monitoring, incremental ingestion, orchestration, and GCP deployment.
 
 There are still several areas that could be improved as the project evolves from a learning/portfolio system toward a more production-oriented AI platform.
 
-## 13.1 Retrieval Improvements
+### 13.1 Retrieval Improvements
 
 The retrieval experiments showed that additional retrieval stages do not automatically improve retrieval quality.
 
@@ -2928,7 +2369,7 @@ Potential improvements include:
 
 The main principle should remain **evaluation-driven retrieval engineering** rather than adding retrieval complexity by default.
 
-## 13.2 Generation Evaluation
+### 13.2 Generation Evaluation
 
 Generation evaluation can be expanded beyond the current prompt-comparison approach.
 
@@ -2957,7 +2398,7 @@ LLM generation
 
 rather than treating the entire RAG pipeline as a single black box.
 
-## 13.3 NL2SQL Improvements
+### 13.3 NL2SQL Improvements
 
 The NL2SQL assistant currently includes schema retrieval, SQL generation, validation, automatic `LIMIT`, read-only execution, and monitoring.
 
@@ -2992,7 +2433,7 @@ Read-only execution
 
 This would provide stronger defense-in-depth for database-facing LLM workloads.
 
-## 13.4 Ingestion and Data Freshness
+### 13.4 Ingestion and Data Freshness
 
 The ingestion pipeline already supports incremental processing of local documents and database catalog information.
 
@@ -3031,7 +2472,7 @@ pgvector
 Evaluation / Monitoring
 ```
 
-## 13.5 Evaluation as Continuous Regression Testing
+### 13.5 Evaluation as Continuous Regression Testing
 
 The current evaluation framework can evolve into a CI/CD quality gate.
 
@@ -3057,7 +2498,7 @@ This would prevent changes to retrieval, prompts, embeddings, or models from sil
 
 The evaluation dataset could also be versioned so that benchmark results remain comparable between releases.
 
-## 13.6 Observability and Alerting
+### 13.6 Observability and Alerting
 
 The current monitoring dashboard provides visibility into query volume, latency, assistant usage, and user feedback.
 
@@ -3075,7 +2516,7 @@ Examples include:
 
 A notification integration such as Slack could provide operational alerts without requiring the engineer to continuously watch the dashboard.
 
-## 13.7 Monitoring Platform
+### 13.7 Monitoring Platform
 
 The current Streamlit monitoring dashboard is appropriate for the project's current scale and keeps the architecture simple.
 
@@ -3106,7 +2547,7 @@ Application
          Grafana
 ```
 
-## 13.8 Distributed Tracing
+### 13.8 Distributed Tracing
 
 As the architecture becomes more distributed across Cloud Run, Cloud SQL, LLM providers, and orchestration components, request tracing would become increasingly useful.
 
@@ -3132,7 +2573,7 @@ Response
 
 This would make it easier to identify where latency is introduced and distinguish application, database, embedding, and LLM latency.
 
-## 13.9 Security Improvements
+### 13.9 Security Improvements
 
 The current deployment already separates sensitive configuration from source code through environment configuration and Secret Manager.
 
@@ -3151,7 +2592,7 @@ Further improvements could include:
 
 For NL2SQL specifically, database-level read-only permissions should remain an additional safety boundary rather than relying only on application-level SQL validation.
 
-## 13.10 Cloud Architecture Improvements
+### 13.10 Cloud Architecture Improvements
 
 The current GCP deployment is designed to demonstrate a practical and cost-aware cloud architecture.
 
@@ -3171,7 +2612,7 @@ Future production-oriented improvements could include:
 
 The existing Terraform structure provides a foundation for these improvements.
 
-## 13.11 CI/CD
+### 13.11 CI/CD
 
 The project could be extended with a complete CI/CD pipeline:
 
@@ -3195,7 +2636,7 @@ Smoke Tests
 
 This would connect the project's software engineering, evaluation, and cloud deployment practices into a single repeatable delivery workflow.
 
-## 13.12 Testing Strategy
+### 13.12 Testing Strategy
 
 The current evaluation suite focuses primarily on retrieval and generation behavior.
 
@@ -3229,7 +2670,7 @@ Potential test coverage includes:
 * database connectivity
 * deployed application health
 
-## 13.13 Performance and Cost Optimization
+### 13.13 Performance and Cost Optimization
 
 Performance optimization should be measured together with quality and cloud cost.
 
@@ -3257,7 +2698,7 @@ Infrastructure Cost
 
 This is particularly relevant when deciding whether additional retrieval or reranking stages provide enough quality improvement to justify their computational cost.
 
-## 13.14 Product and User Experience
+### 13.14 Product and User Experience
 
 The current Streamlit interface demonstrates the core assistant capabilities.
 
@@ -3277,14 +2718,14 @@ Future UX improvements could include:
 
 These improvements would move the project from a technical demonstration toward a more complete internal developer/data-platform assistant.
 
-## 13.15 Future Architecture Direction
+### 13.15 Future Architecture Direction
 
 Taken together, the improvements suggest a natural evolution from the current portfolio implementation toward a more production-oriented AI data platform:
 
 ![Future Architecture Direction](assets/Future-Architecture-Direction.png)
 
 
-### Improvement Philosophy
+### 13.16 Improvement Philosophy
 
 The project is intentionally designed so that improvements can be introduced incrementally and validated with measurements.
 
