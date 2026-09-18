@@ -1014,44 +1014,7 @@ Task failures are surfaced in the Kestra UI, providing basic operational visibil
 
 ### Ingestion Architecture
 
-```text
-                 ┌──────────────────────┐
-                 │   Source Documents   │
-                 │ DDL / Markdown / SQL │
-                 └──────────┬───────────┘
-                            │
-                            ▼
-                 ┌──────────────────────┐
-                 │   local_file mode    │
-                 └──────────┬───────────┘
-                            │
-                            │
-┌──────────────────┐        │
-│ PostgreSQL DB    │        │
-│ information/     │────────┤
-│ catalog metadata │        │
-└──────────────────┘        │
-                            ▼
-                 ┌──────────────────────┐
-                 │   Chunking + Hashing │
-                 └──────────┬───────────┘
-                            ▼
-                 ┌──────────────────────┐
-                 │ Incremental Upsert   │
-                 │   + Change Detection │
-                 └──────────┬───────────┘
-                            ▼
-                 ┌──────────────────────┐
-                 │ PostgreSQL + pgvector│
-                 │     doc_chunks       │
-                 └──────────────────────┘
-                            ▲
-                            │
-                 ┌──────────┴───────────┐
-                 │       Kestra         │
-                 │ Schedule / Webhook   │
-                 └──────────────────────┘
-```
+![Ingestion Architecture](assets/Ingestion-Architecture.png)
 
 The resulting knowledge base can therefore be refreshed repeatedly while minimizing unnecessary embedding work and keeping indexed documentation aligned with its source.
 
@@ -1156,29 +1119,8 @@ This approach allows the same application image and codebase to switch between l
 
 ### Model Selection Architecture
 
-```text
-                    ┌─────────────────────┐
-                    │   Application Code  │
-                    │ RAG / NL2SQL / Logs  │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │    OpenAI SDK API   │
-                    │  compatible client  │
-                    └──────────┬──────────┘
-                               │
-                    ┌──────────┴──────────┐
-                    │                     │
-                    ▼                     ▼
-             ┌─────────────┐      ┌─────────────┐
-             │   Ollama    │      │    Groq     │
-             │   Local     │      │    Cloud    │
-             └──────┬──────┘      └──────┬──────┘
-                    │                    │
-                    ▼                    ▼
-             Local LLMs            qwen/qwen3.8-27b
-```
+![Model Selection Architecture](assets/Model-Selection-Architecture.png)
+
 
 The architecture deliberately separates **model/provider configuration from application behavior**, making model experimentation and deployment changes easier without modifying the core application logic.
 
@@ -1375,7 +1317,7 @@ The architecture also separates retrieval from LLM generation:
 │  ┌───────────────────────────────────────┐  │
 │  │ Streamlit Application                 │  │
 │  │                                       │  │
-│  │  Retrieval → Context → LLM           │  │
+│  │  Retrieval → Context → LLM            │  │
 │  └───────────────────┬───────────────────┘  │
 │                      │                      │
 │                      ▼                      │
@@ -2135,20 +2077,20 @@ The deployed architecture consists of:
 │       │                                                 │
 │       │ container image                                 │
 │       ▼                                                 │
-│  Cloud Run                                               │
-│  ├── db-rag-app                                          │
-│  │       │                                               │
-│  │       └──────────────┐                                │
-│  │                      │                                │
-│  └── db-rag-monitoring  │                                │
-│                         │                                │
-│                         ▼                                │
-│                  Cloud SQL PostgreSQL                    │
-│                       + pgvector                          │
-│                         │                                │
-│              ┌──────────┴──────────┐                     │
-│              │                     │                     │
-│         doc_chunks              query_logs               │
+│  Cloud Run                                              │
+│  ├── db-rag-app                                         │
+│  │       │                                              │
+│  │       └──────────────┐                               │
+│  │                      │                               │
+│  └── db-rag-monitoring  │                               │
+│                         │                               │
+│                         ▼                               │
+│                  Cloud SQL PostgreSQL                   │
+│                       + pgvector                        │
+│                         │                               │
+│              ┌──────────┴──────────┐                    │
+│              │                     │                    │
+│         doc_chunks              query_logs              │
 │                                                         │
 │  Secret Manager → application secrets                   │
 │                                                         │
@@ -3398,40 +3340,8 @@ These improvements would move the project from a technical demonstration toward 
 
 Taken together, the improvements suggest a natural evolution from the current portfolio implementation toward a more production-oriented AI data platform:
 
-```text
-                         ┌──────────────────────┐
-                         │       Users          │
-                         └──────────┬───────────┘
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │     AI Assistant     │
-                         │  RAG + NL2SQL + UX   │
-                         └──────────┬───────────┘
-                                    │
-              ┌─────────────────────┼─────────────────────┐
-              │                     │                     │
-              ▼                     ▼                     ▼
-        Retrieval Layer        Generation Layer      SQL Guardrails
-              │                     │                     │
-              └─────────────────────┼─────────────────────┘
-                                    │
-                                    ▼
-                         PostgreSQL + pgvector
-                                    │
-              ┌─────────────────────┼─────────────────────┐
-              │                     │                     │
-              ▼                     ▼                     ▼
-          Monitoring            Evaluation           Ingestion
-              │                     │                     │
-              ▼                     ▼                     ▼
-        Observability          Quality Gates          Kestra
-              │                     │                     │
-              └─────────────────────┼─────────────────────┘
-                                    │
-                                    ▼
-                             GCP / Cloud Run
-```
+![Future Architecture Direction](assets/Future-Architecture-Direction.png)
+
 
 ### Improvement Philosophy
 
