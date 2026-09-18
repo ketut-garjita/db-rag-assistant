@@ -2188,7 +2188,7 @@ docker run --rm \
 
 The ingestion process is incremental: changed chunks are embedded and upserted, while stale chunks can be removed. This allows the same ingestion mechanism to be reused when the documentation or database schema changes.
 
-## 12.9 Cloud Deployment of the RAG and NL2SQL Workloads
+### 12.9 Cloud Deployment of the RAG and NL2SQL Workloads
 
 The deployed architecture supports both major application workflows:
 
@@ -2198,7 +2198,7 @@ The NL2SQL workflow retrieves only `db_catalog` schema context from `doc_chunks`
 
 This means the cloud deployment preserves the same safety and retrieval boundaries established during local development.
 
-## 12.10 Operational Cost Management
+### 12.10 Operational Cost Management
 
 Because this project is primarily a learning and portfolio deployment, the GCP infrastructure is configured with cost awareness.
 
