@@ -1951,32 +1951,8 @@ The feedback mechanism therefore provides a simple human-in-the-loop signal that
 
 The monitoring flow is intentionally simple:
 
-```text
-┌──────────────────────────────┐
-│      Streamlit Application   │
-│                              │
-│  DB Schema Assistant         │
-│  NL2SQL Assistant            │
-└──────────────┬───────────────┘
-               │
-               │ log interaction
-               ▼
-┌──────────────────────────────┐
-│        monitoring/logger.py  │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│       PostgreSQL             │
-│       query_logs             │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│   Monitoring Dashboard       │
-│   monitoring_dashboard.py    │
-└──────────────────────────────┘
-```
+![Monitoring Architecture](assets/Monitoring-Architecture.png)
+
 
 This design avoids introducing a separate observability database for the project's current scale while still providing persistent operational data.
 
@@ -1986,21 +1962,7 @@ In the GCP deployment, the application and monitoring components can run as sepa
 
 The resulting architecture separates the user-facing application from the monitoring dashboard while keeping their operational data centralized:
 
-```text
-Cloud Run
-├── db-rag-app
-│      │
-│      └── DB Schema Assistant / NL2SQL
-│
-└── db-rag-monitoring
-       │
-       └── Monitoring Dashboard
-
-              │
-              ▼
-        Cloud SQL PostgreSQL
-        └── query_logs
-```
+![Monitoring in the GCP Deployment](assets/Monitoring-in-the-GCP-Deployment.png)
 
 This preserves the same monitoring model used during local development while allowing the dashboard to observe the deployed application environment.
 
@@ -2008,29 +1970,8 @@ This preserves the same monitoring model used during local development while all
 
 Monitoring complements the offline evaluation framework:
 
-```text
-Offline Evaluation
-      │
-      ├── Retrieval quality
-      └── Generation quality
-               │
-               ▼
-        Deploy Application
-               │
-               ▼
-       Runtime Monitoring
-               │
-       ┌───────┴────────┐
-       │                │
-    Latency          Feedback
-       │                │
-       └───────┬────────┘
-               ▼
-       Engineering Changes
-               │
-               ▼
-        Re-evaluation
-```
+![Operational Feedback Loop](assets/Operational-Feedback-Loop.png)
+
 
 The combination of **offline evaluation + runtime monitoring + user feedback** provides a practical feedback loop for improving the RAG and NL2SQL system based on measured behavior rather than assumptions.
 
